@@ -122,3 +122,18 @@ def freeze(model):
 
 def tensor2SFTensor(tensor):
     return tensor * (127.5 / 128.)
+
+
+def save_network(args, net, file_name):
+    save_filename = '{}.pth'.format(file_name)
+    save_dir = os.path.join(args.checkpoints_dir, args.name)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    save_path = os.path.join(save_dir, save_filename)
+    if len(args.gpu_ids) > 1 and torch.cuda.is_available():
+        try:
+            torch.save(net.module.cpu().state_dict(), save_path)
+        except:
+            torch.save(net.cpu().state_dict(), save_path)
+    else:
+        torch.save(net.cpu().state_dict(), save_path)

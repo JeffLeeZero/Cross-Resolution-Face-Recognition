@@ -1,6 +1,6 @@
 import argparse
 from . import common_args, modify_args
-from common.util import str2bool
+from util.common import str2bool
 
 def get_args():
 	parser = common_args.get_args()
@@ -25,5 +25,6 @@ def get_args():
 	parser.add_argument('--checkpoints_dir', type=str, default='../checkpoints', help='models are saved here')
 	parser.add_argument('--backup_dir', type=str, default='../backups')
 	parser.add_argument('--model_file', type=str, default='../backups/master/backup.pth')
+	parser.add_argument('--epoch', type=int, default=20)
 	args = modify_args.run(parser)
 	return args
