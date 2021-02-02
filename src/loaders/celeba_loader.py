@@ -40,7 +40,6 @@ class CelebADataset(torch.utils.data.Dataset):
 class CelebADatasetDownsample(torch.utils.data.Dataset):
     def __init__(self):
         super(CelebADatasetDownsample, self).__init__()
-        super(CelebADataset, self).__init__()
         df = pd.read_csv(CELEBA_CSV, delimiter=",")
         self.faces_path = df.values[:, 0]
         self.landmarks = df.values[:, 1:]

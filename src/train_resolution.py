@@ -87,7 +87,7 @@ def save_network_for_backup(args, srnet, optimizer, scheduler, epoch_id):
 
 def main():
     args = train_args.get_args()
-    dataloader = celeba_loader.get_loader_with_id(args)
+    dataloader = celeba_loader.get_loader_downsample(args)
     ## Setup FNet
     fnet = sface.sface()
     fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
@@ -115,7 +115,10 @@ def main():
                 hr_face = mr_face
             else:
                 hr_face = inputs['down1'].to(args.device)
-            sr_face_feature, _ = net(lr_face)
+
+            w = torch.full([lr_face.shape[0], 1], lr_face.shape[2]).to(args.device)
+            h = torch.full([lr_face.shape[0], 1], lr_face.shape[3]).to(args.device)
+            sr_face_feature, _ = net(lr_face, w, h)
             hr_face_feature = fnet(tensor2SFTensor(hr_face)).detach()
             loss_feature = 1 - torch.nn.CosineSimilarity()(sr_face_feature, hr_face_feature)
             loss_feature = loss_feature.mean()
