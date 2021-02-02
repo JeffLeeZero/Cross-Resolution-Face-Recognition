@@ -32,7 +32,8 @@ def tensor2SFTensor(tensor):
 
 
 def common_init(args):
-    net = net_resolution.get_pretrain_modle(srnet_path="../../pretrained/srnet.pth", fnet_path="../../pretrained/sface.pth")
+    net = net_resolution.get_pretrain_modle(srnet_path="../../pretrained/srnet.pth",
+                                            fnet_path="../../pretrained/sface.pth")
     net.freeze("convs")
     net.freeze("srnet")
     net.to(args.device)
@@ -100,7 +101,8 @@ def main():
     epochs = args.epoch
     for epoch_id in range(last_epoch + 1, epochs):
         bar = tqdm(dataloader, total=len(dataloader), ncols=0)
-        loss = [0.0, 0.0, 0.0,0.0, 0.0]
+        loss = [0.0, 0.0, 0.0, 0.0, 0.0]
+        count = [0, 0, 0, 0, 0]
         for batch_id, inputs in enumerate(bar):
             net.train()
             scheduler.step()  # update learning rate
@@ -120,12 +122,13 @@ def main():
             loss_feature = 1 - torch.nn.CosineSimilarity()(sr_face_feature, hr_face_feature)
             loss_feature = loss_feature.mean()
             loss[index] += loss_feature.float()
+            count[index] += 1
             optimizer.zero_grad()
             loss_feature.backward()
             optimizer.step()
             # display
             description = "epoch{}".format(epoch_id)
-            description += 'loss: {:.0f} '.format(loss[index])
+            description += 'loss: {:.3f} '.format(loss[index]/count[index])
             description += 'lr: {:.3e} '.format(lr)
             description += 'index: {:.0f} '.format(index)
             bar.set_description(desc=description)
