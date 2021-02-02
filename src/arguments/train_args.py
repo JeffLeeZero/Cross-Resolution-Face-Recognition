@@ -10,8 +10,7 @@ def get_args():
 	                    help='webface/vggface2/celeba')
 	parser.add_argument('--lr', default=1e-4, type=float, help='learning rate')
 	parser.add_argument('--bs', default=26, type=int, help='')
-	parser.add_argument('--iterations', default=100000, type=int, help='50000')
-	parser.add_argument('--decay_step', default=25000, type=int, help='25000')
+	parser.add_argument('--decay_step', default=25000, type=int, help='10000')
 	## SR model settings
 	parser.add_argument('--sr_net', default='EDSR', type=str, help='EDSR')
 	parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 4, 8],

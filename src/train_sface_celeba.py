@@ -54,7 +54,7 @@ def save_network_for_backup(args, srnet, optimizer, epoch_id, lr):
 
 def main():
     args = train_args.get_args()
-    dataloader = celeba_loader.get_loader(args)
+    dataloader = celeba_loader.get_loader_with_id(args)
     it = iter(dataloader)
     data = next(it)
     if args.Continue:

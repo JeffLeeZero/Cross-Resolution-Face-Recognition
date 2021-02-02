@@ -120,6 +120,13 @@ def freeze(model):
         freeze(child)
 
 
+def unfreeze(model):
+    for name, child in model.named_children():
+        for param in child.parameters():
+            param.requires_grad = True
+        unfreeze(child)
+
+
 def tensor2SFTensor(tensor):
     return tensor * (127.5 / 128.)
 
