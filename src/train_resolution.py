@@ -103,7 +103,7 @@ def main():
     epochs = args.epoch
     for epoch_id in range(last_epoch + 1, epochs):
         bar = tqdm(dataloader, total=len(dataloader), ncols=0)
-        loss = 0
+        loss = [0.0, 0.0, 0.0]
         for batch_id, inputs in enumerate(bar):
             net.train()
             scheduler.step()  # update learning rate
@@ -122,7 +122,7 @@ def main():
             hr_face_feature = fnet(tensor2SFTensor(hr_face)).detach()
             loss_feature = 1 - torch.nn.CosineSimilarity()(sr_face_feature, hr_face_feature)
             loss_feature = loss_feature.mean()
-            loss += loss_feature.data[0]
+            loss[index-2] += loss_feature.float()
             optimizer.zero_grad()
             loss_feature.backward()
             optimizer.step()
