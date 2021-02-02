@@ -8,6 +8,7 @@ from util import common
 
 class NetResolution(nn.Module):
     def __init__(self, srnet, sface, feature_count, srnet_freeze=False, fnet_freeze=False):
+        super(NetResolution, self).__init__()
         self.srnet = srnet
         if srnet_freeze:
             common.freeze(self.srnet)
@@ -16,8 +17,8 @@ class NetResolution(nn.Module):
             common.freeze(self.convs)
         self.fc_layer = nn.Sequential(
             nn.Linear(512 * 7 * 6 + 2, feature_count),
-            nn.BatchNorm2d(),
-            nn.ReLU(),
+            nn.BatchNorm1d(feature_count),
+            nn.PReLU(),
             nn.Linear(feature_count, feature_count)
         )
 
@@ -45,7 +46,7 @@ class NetResolution(nn.Module):
 def get_model():
     srnet = edsr.Edsr()
     fnet = sface.sface()
-    net = NetResolution(srnet, fnet, 10200)
+    net = NetResolution(srnet=srnet, sface=fnet, feature_count=512)
     return net
 
 
@@ -57,5 +58,5 @@ def get_pretrain_modle(srnet_path=None, fnet_path=None):
     fnet = sface.sface()
     if fnet_path:
         fnet.load_state_dict(torch.load(fnet_path))
-    net = NetResolution(srnet, fnet, 10200)
+    net = NetResolution(srnet=srnet, sface=fnet, feature_count=512)
     return net

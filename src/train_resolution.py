@@ -90,9 +90,8 @@ def main():
     dataloader = celeba_loader.get_loader_with_id(args)
     ## Setup FNet
     fnet = sface.sface()
-    fnet.load_state_dict(torch.load('../pretrained/sface.pth'))
+    fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
     fnet.to(args.device)
-
     if args.Continue:
         net, optimizer, last_epoch, scheduler = backup_init(args)
     else:
