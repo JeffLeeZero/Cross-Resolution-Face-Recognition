@@ -97,13 +97,10 @@ def main():
     else:
         net, optimizer, last_epoch, scheduler = common_init(args)
 
-    criterion_pixel = nn.L1Loss()
-
-    losses = ['loss',  'lr', 'index']
     epochs = args.epoch
     for epoch_id in range(last_epoch + 1, epochs):
         bar = tqdm(dataloader, total=len(dataloader), ncols=0)
-        loss = [0.0, 0.0, 0.0]
+        loss = [0.0, 0.0, 0.0,0.0, 0.0]
         for batch_id, inputs in enumerate(bar):
             net.train()
             scheduler.step()  # update learning rate
@@ -122,23 +119,15 @@ def main():
             hr_face_feature = fnet(tensor2SFTensor(hr_face)).detach()
             loss_feature = 1 - torch.nn.CosineSimilarity()(sr_face_feature, hr_face_feature)
             loss_feature = loss_feature.mean()
-            loss[index-2] += loss_feature.float()
+            loss[index] += loss_feature.float()
             optimizer.zero_grad()
             loss_feature.backward()
             optimizer.step()
             # display
-            description = ""
-            for name in losses:
-                try:
-                    value = float(eval(name))
-                    if name == 'index':
-                        description += '{}: {:.0f} '.format(name, value)
-                    elif name == 'lr':
-                        description += '{}: {:.3e} '.format(name, value)
-                    else:
-                        description += '{}: {:.3f} '.format(name, value / (batch_id + 1))
-                except:
-                    continue
+            description = "epoch{}".format(epoch_id)
+            description += 'loss: {:.0f} '.format(loss[index])
+            description += 'lr: {:.3e} '.format(lr)
+            description += 'index: {:.0f} '.format(index)
             bar.set_description(desc=description)
 
         save_network_for_backup(args, net, optimizer, scheduler, epoch_id)
