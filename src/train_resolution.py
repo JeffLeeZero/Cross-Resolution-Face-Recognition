@@ -136,7 +136,7 @@ def main():
                     elif name == 'lr':
                         description += '{}: {:.3e} '.format(name, value)
                     else:
-                        description += '{}: {:.3f} '.format(name, value / batch_id)
+                        description += '{}: {:.3f} '.format(name, value / (batch_id + 1))
                 except:
                     continue
             bar.set_description(desc=description)
