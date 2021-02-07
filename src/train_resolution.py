@@ -10,6 +10,7 @@ from tqdm import tqdm
 from arguments import train_args
 from util import common
 from loaders import celeba_loader
+import lfw_verification as val
 
 
 def save_network(args, net, epoch):
@@ -47,10 +48,7 @@ def common_init(args):
 
 
 def backup_init(args):
-    save_filename = 'backup.pth'
-    save_dir = os.path.join(args.backup_dir, args.name)
-    save_path = os.path.join(save_dir, save_filename)
-    checkpoint = torch.load(save_path)  # 加载断点
+    checkpoint = torch.load(args.model_file)  # 加载断点
 
     ## Setup SRNet
     net = net_resolution.get_model()
@@ -78,7 +76,7 @@ def save_network_for_backup(args, srnet, optimizer, scheduler, epoch_id):
         'scheduler': scheduler.state_dict()
     }
 
-    save_filename = 'backup.pth'
+    save_filename = 'backup_epoch{}.pth'.format(epoch_id)
     save_dir = os.path.join(args.backup_dir, args.name)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -97,7 +95,7 @@ def main():
         net, optimizer, last_epoch, scheduler = backup_init(args)
     else:
         net, optimizer, last_epoch, scheduler = common_init(args)
-
+    best_acc = 0.0
     epochs = args.epoch
     for epoch_id in range(last_epoch + 1, epochs):
         bar = tqdm(dataloader, total=len(dataloader), ncols=0)
@@ -128,12 +126,15 @@ def main():
             optimizer.step()
             # display
             description = "epoch{}".format(epoch_id)
-            description += 'loss: {:.3f} '.format(loss[index]/count[index])
+            description += 'loss: {:.3f} '.format(loss[index] / count[index])
             description += 'lr: {:.3e} '.format(lr)
             description += 'index: {:.0f} '.format(index)
             bar.set_description(desc=description)
 
-        save_network_for_backup(args, net, optimizer, scheduler, epoch_id)
+        acc = val.run("sface", -1, 16, 96, 112, 32, args.device, fnet, net)
+        if acc > best_acc:
+            best_acc = acc
+            save_network_for_backup(args, net, optimizer, scheduler, epoch_id)
 
     # Save the final SR model
     save_network(args, net, epochs)

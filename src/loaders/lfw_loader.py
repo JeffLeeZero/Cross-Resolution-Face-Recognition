@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from util.common import alignment, face_ToTensor
 
-LFW_ROOT = '../datasets/lfw/'
+LFW_ROOT = '../../Datasets/lfw/'
 LFW_LANDMARKS = '../data/LFW.csv'
 LFW_PAIRS = '../data/lfw_pairs.txt'
 CELEBA_ROOT = '../../Datasets/CelebA/img_celeba/'
@@ -15,13 +15,17 @@ CELEBA_ID = '../data/identity_CelebA.txt'
 
 
 class LFWDataset(torch.utils.data.Dataset):
-    def __init__(self, args):
+    def __init__(self, size, down_factor, w, h, isSR=True):
         super(LFWDataset, self).__init__()
-        self.args = args
         df = pd.read_csv(LFW_LANDMARKS, delimiter=",", header=None)
         numpyMatrix = df.values
         self.landmarks = numpyMatrix[:, 1:]
         self.df = df
+        self.size = size
+        self.down_factor = down_factor
+        self.w = w
+        self.h = h
+        self.isSR = isSR
         with open(LFW_PAIRS) as f:
             pairs_lines = f.readlines()[1:]
         self.pairs_lines = pairs_lines
@@ -36,23 +40,23 @@ class LFWDataset(torch.utils.data.Dataset):
             sameflag = np.int32(0).reshape(1)
             name1 = p[0] + '/' + p[0] + '_' + '{:04}.jpg'.format(int(p[1]))
             name2 = p[2] + '/' + p[2] + '_' + '{:04}.jpg'.format(int(p[3]))
-        img1 = alignment(cv2.imread(_lfw_root + name1),
+        img1 = alignment(cv2.imread(LFW_ROOT + name1),
                          self.landmarks[self.df.loc[self.df[0] == name1].index.values[0]])
-        img2 = alignment(cv2.imread(_lfw_root + name2),
+        img2 = alignment(cv2.imread(LFW_ROOT + name2),
                          self.landmarks[self.df.loc[self.df[0] == name2].index.values[0]])
         ## Resize second image
-        if self.args.size != -1:
+        if self.size != -1:
             ## Use args.size
-            img2 = cv2.resize(img2, (self.args.size, self.args.size), interpolation=cv2.INTER_CUBIC)
+            img2 = cv2.resize(img2, (self.size, self.size), interpolation=cv2.INTER_CUBIC)
         else:
             ## Use args.down_factor
-            img2 = cv2.resize(img2, None, fx=1 / self.args.down_factor, fy=1 / self.args.down_factor,
+            img2 = cv2.resize(img2, None, fx=1 / self.down_factor, fy=1 / self.down_factor,
                               interpolation=cv2.INTER_CUBIC)
 
         ## Resize the to the required size of FNet
-        img1 = cv2.resize(img1, (self.args.w, self.args.h), cv2.INTER_CUBIC)
-        if not self.args.isSR:
-            img2 = cv2.resize(img2, (self.args.w, self.args.h), cv2.INTER_CUBIC)
+        img1 = cv2.resize(img1, (self.w, self.h), cv2.INTER_CUBIC)
+        if not self.isSR:
+            img2 = cv2.resize(img2, (self.w, self.h), cv2.INTER_CUBIC)
 
         ## Obtain the mirror faces
         img1_flip = cv2.flip(img1, 1)
@@ -66,11 +70,11 @@ class LFWDataset(torch.utils.data.Dataset):
         return len(self.pairs_lines)
 
 
-def get_loader(args, num_workers=1):
-    dataset = LFWDataset(args)
+def get_loader(size, down_factor, w, h, lfw_bs, num_workers=1, isSR=True):
+    dataset = LFWDataset(size, down_factor, w, h,isSR)
     dataloader = DataLoader(dataset=dataset,
                             num_workers=num_workers,
-                            batch_size=args.lfw_bs,
+                            batch_size=lfw_bs,
                             shuffle=False,
                             drop_last=False)
     return dataloader

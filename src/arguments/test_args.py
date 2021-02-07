@@ -1,5 +1,5 @@
 from . import common_args, modify_args
-from common.util import str2bool
+from util.common import str2bool
 
 
 def get_args():
