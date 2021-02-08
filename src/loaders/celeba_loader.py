@@ -6,10 +6,7 @@ import cv2
 import pandas as pd
 import random
 
-LFW_ROOT = '../datasets/lfw/'
-LFW_LANDMARKS = '../data/LFW.csv'
-LFW_PAIRS = '../data/lfw_pairs.txt'
-CELEBA_ROOT = '../../Datasets/CelebA/img_celeba/'
+CELEBA_ROOT = '../../img_align_celeba/'
 CELEBA_CSV = '../data/celeba_clean_landmarks.csv'
 CELEBA_ID = '../data/identity_CelebA.txt'
 
