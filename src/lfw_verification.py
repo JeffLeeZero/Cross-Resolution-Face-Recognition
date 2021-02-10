@@ -13,7 +13,7 @@ from util.common import KFold, find_best_threshold, eval_acc, tensor_pair_cosine
     tensor_sface_norm, tensors_cvBicubic_resize
 
 
-def run(fnet_type, size, down_factor, w, h, lfw_bs, device, net=None, step=None):
+def run(fnet_type, size, down_factor, w, h, lfw_bs, device, fnet, net=None, step=None):
     fnet.eval()
     if net is not None:
         net.eval()

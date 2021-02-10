@@ -35,7 +35,7 @@ def tensor2SFTensor(tensor):
 def common_init(args):
     net = net_resolution.get_pretrain_modle(srnet_path="../../pretrained/srnet.pth",
                                             fnet_path="../../pretrained/sface.pth")
-    net.freeze("convs")
+    #net.freeze("convs")
     net.freeze("srnet")
     net.to(args.device)
     if len(args.gpu_ids) > 1:
@@ -53,7 +53,7 @@ def backup_init(args):
     ## Setup SRNet
     net = net_resolution.get_model()
     net.load_state_dict(checkpoint['net'])  # 加载模型可学习参数
-    net.freeze("convs")
+    #net.freeze("convs")
     net.freeze("srnet")
     net.to(args.device)
     if len(args.gpu_ids) > 1:
