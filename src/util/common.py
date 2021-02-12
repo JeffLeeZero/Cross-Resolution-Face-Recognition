@@ -144,3 +144,4 @@ def save_network(args, net, file_name):
             torch.save(net.cpu().state_dict(), save_path)
     else:
         torch.save(net.cpu().state_dict(), save_path)
+
