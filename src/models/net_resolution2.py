@@ -16,21 +16,25 @@ class NetResolution(nn.Module):
         if fnet_freeze:
             common.freeze(self.convs)
         self.fc_layer = nn.Sequential(
-            nn.Linear(512 * 7 * 6 + 2, feature_count),
-            #nn.BatchNorm1d(feature_count),
+            nn.Linear(512 * 7 * 6 + 2, 512 * 3),
             nn.PReLU(),
-            nn.Linear(feature_count, feature_count),
+            nn.Linear(512 * 3, 512 * 3),
             nn.PReLU(),
-            nn.Linear(feature_count, feature_count)
+            nn.Linear(512 * 3, 512 * 3),
+            nn.PReLU(),
+            nn.Linear(512 * 3, 512 * 7 * 6),
+            nn.PReLU()
         )
+        self.raw_layer = nn.Sequential(*list(sface.children())[-1:])
 
     def forward(self, x, w, h):
         sr_face = self.srnet(x)
         x = functional.interpolate(sr_face, size=(112, 96), mode='bilinear', align_corners=False)
         x = common.tensor2SFTensor(x)
-        x = self.convs(x)
-        x = torch.cat([x, w, h], dim=1)
+        raw_x = self.convs(x)
+        x = torch.cat([raw_x, w, h], dim=1)
         x = self.fc_layer(x)
+        x = self.raw_layer(x + raw_x)
         return x, sr_face
 
     def freeze(self, part):
@@ -44,6 +48,7 @@ class NetResolution(nn.Module):
             common.unfreeze(self.convs)
         elif part == "srnet":
             common.unfreeze(self.srnet)
+
 
 def get_model():
     srnet = edsr.Edsr()
