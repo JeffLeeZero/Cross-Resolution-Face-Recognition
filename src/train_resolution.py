@@ -50,11 +50,8 @@ def common_init(args):
 def backup_init(args):
     checkpoint = torch.load(args.model_file)  # 加载断点
 
-    ## Setup SRNet
     net = net_resolution.get_model()
     net.load_state_dict(checkpoint['net'])  # 加载模型可学习参数
-    net.freeze("convs")
-    net.freeze("srnet")
     net.to(args.device)
     if len(args.gpu_ids) > 1:
         srnet = nn.DataParallel(net)

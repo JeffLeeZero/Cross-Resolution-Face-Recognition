@@ -17,16 +17,18 @@ class CelebADataset(torch.utils.data.Dataset):
         df = pd.read_csv(CELEBA_CSV, delimiter=",")
         self.faces_path = df.values[:, 0]
         self.landmarks = df.values[:, 1:]
+        self.id = {}
         with open(CELEBA_ID) as f:
-            id = f.readlines()
-        self.id = id
+            ids = f.readlines()
+        for item in ids:
+            id = item.split()
+            self.id[id[0]] = id[1][0:-1]
 
     def __getitem__(self, index):
         path = self.faces_path[index]
         img = cv2.imread(CELEBA_ROOT + path)
         face = common.alignment(img, self.landmarks[index].reshape(-1, 2))
-        index = int(path[0:-4])
-        id = int(self.id[index].split()[1][0:-1])
+        id = int(self.id[path])
 
         return face, id
 

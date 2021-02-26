@@ -101,6 +101,6 @@ def main():
 
     common.save_network(args, net, "sface_celeba_epoch{}".format(epoch))
 
+
 if __name__ == '__main__':
-    print('try')
     main()
