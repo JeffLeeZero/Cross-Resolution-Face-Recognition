@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
-
+import torch
 
 class SphereLoss(nn.Module):
     def __init__(self, gamma=0):
@@ -19,7 +19,7 @@ class SphereLoss(nn.Module):
 
         index = cos_theta.data * 0.0  # size=(B,Classnum)
         index.scatter_(1, target.data.view(-1, 1), 1)
-        index = index.byte()
+        index = index.bool()
         index = Variable(index)
 
         self.lamb = max(self.LambdaMin, self.LambdaMax / (1 + 0.1 * self.it))
@@ -27,7 +27,7 @@ class SphereLoss(nn.Module):
         output[index] -= cos_theta[index] * (1.0 + 0) / (1 + self.lamb)
         output[index] += phi_theta[index] * (1.0 + 0) / (1 + self.lamb)
 
-        logpt = F.log_softmax(output)
+        logpt = F.log_softmax(output, dim=1)
         logpt = logpt.gather(1, target)
         logpt = logpt.view(-1)
         pt = Variable(logpt.data.exp())

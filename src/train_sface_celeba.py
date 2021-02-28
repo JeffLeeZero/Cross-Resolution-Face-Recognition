@@ -81,11 +81,11 @@ def main():
             optimizer.zero_grad()
             outputs = net(inputs)
             loss = criterion(outputs, targets)
-            lossd = loss.data[0]
+            lossd = loss.item()
             loss.backward()
             optimizer.step()
 
-            train_loss += loss.data[0]
+            train_loss += lossd
             outputs = outputs[0]  # 0=cos_theta 1=phi_theta
             _, predicted = torch.max(outputs.data, 1)
             total += targets.size(0)
@@ -96,8 +96,8 @@ def main():
                                                                                            correct, total,
                                                                                            lossd)
             bar.set_description(desc=description)
-
-        save_network_for_backup(args, net, optimizer, epoch_id)
+        if epoch_id % 4 == 0:
+            save_network_for_backup(args, net, optimizer, epoch_id)
 
     common.save_network(args, net, "sface_celeba_epoch{}".format(epoch))
 
