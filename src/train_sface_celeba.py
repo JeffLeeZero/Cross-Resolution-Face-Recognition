@@ -27,7 +27,7 @@ def backup_init(args):
 
 
 def common_init(args):
-    net = sface_celeba.get_net_from_pretrain('../pretrained/sface.pth')
+    net = sface_celeba.get_net_from_pretrain('../../pretrained/sface.pth')
     net.to(args.device)
     if len(args.gpu_ids) > 1:
         net = nn.DataParallel(net)

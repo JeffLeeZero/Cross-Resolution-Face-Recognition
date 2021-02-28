@@ -6,7 +6,7 @@ import cv2
 import pandas as pd
 import random
 
-CELEBA_ROOT = '../../img_align_celeba/'
+CELEBA_ROOT = '../../Datasets/Celeba/img_celeba/'#img_align_celeba/'
 CELEBA_CSV = '../data/celeba_clean_landmarks.csv'
 CELEBA_ID = '../data/identity_CelebA.txt'
 
@@ -30,7 +30,7 @@ class CelebADataset(torch.utils.data.Dataset):
         face = common.alignment(img, self.landmarks[index].reshape(-1, 2))
         id = int(self.id[path])
 
-        return face, id
+        return common.face_ToTensor(face), id
 
     def __len__(self):
         return len(self.faces_path)
