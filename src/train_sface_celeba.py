@@ -63,6 +63,7 @@ def main():
         net, optimizer, last_epoch, lr = common_init(args)
     epoch = args.epoch
     criterion = SphereLoss()
+    net.train()
     for epoch_id in range(last_epoch + 1, epoch):
         if epoch_id in [0, 10, 15, 18]:
             if epoch_id != 0: lr *= 0.1
@@ -90,14 +91,14 @@ def main():
             _, predicted = torch.max(outputs.data, 1)
             total += targets.size(0)
             correct += predicted.eq(targets.data).cpu().sum()
-            description = "epoch {}: mean_loss={} | mean_acc={}% ({}/{}) | loss={}".format(epoch_id,
+            description = "epoch {}: mean_loss={:.5f} | mean_acc={:.3f}% ({}/{}) | loss={:.5f}".format(epoch_id,
                                                                                            train_loss / (batch_idx + 1),
                                                                                            100.0 * correct / total,
                                                                                            correct, total,
                                                                                            lossd)
             bar.set_description(desc=description)
         if epoch_id % 4 == 0:
-            save_network_for_backup(args, net, optimizer, epoch_id)
+            save_network_for_backup(args, net, optimizer, epoch_id, lr)
 
     common.save_network(args, net, "sface_celeba_epoch{}".format(epoch))
 

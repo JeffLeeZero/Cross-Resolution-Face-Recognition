@@ -22,7 +22,7 @@ class CelebADataset(torch.utils.data.Dataset):
             ids = f.readlines()
         for item in ids:
             id = item.split()
-            self.id[id[0]] = id[1][0:-1]
+            self.id[id[0]] = id[1].split('"')[0]
 
     def __getitem__(self, index):
         path = self.faces_path[index]
