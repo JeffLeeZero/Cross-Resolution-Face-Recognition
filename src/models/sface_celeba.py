@@ -62,7 +62,7 @@ class AngleLinear(nn.Module):
 
 
 class SfaceCelebA(nn.Module):
-    def __init__(self, sface, feature_count=10177):
+    def __init__(self, sface, feature_count=10178):
         super(SfaceCelebA, self).__init__()
         self.fnet_without_fc = nn.Sequential(*list(sface.children())[:-1])
         common.freeze(self.fnet_without_fc)

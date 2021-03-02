@@ -9,7 +9,7 @@ from loaders import celeba_loader
 from arguments import train_args
 from util import common
 from losses.sphere_loss import SphereLoss
-
+import lfw_verification as val
 
 def backup_init(args):
     checkpoint = torch.load(args.model_file)
@@ -63,6 +63,7 @@ def main():
         net, optimizer, last_epoch, lr = common_init(args)
     epoch = args.epoch
     criterion = SphereLoss()
+    val.val_sphereface(-1, 96, 112, 32, args.device, net)
     net.train()
     for epoch_id in range(last_epoch + 1, epoch):
         if epoch_id in [0, 10, 15, 18]:
@@ -97,6 +98,7 @@ def main():
                                                                                            correct, total,
                                                                                            lossd)
             bar.set_description(desc=description)
+        val.val_sphereface(-1, 96, 112, 32, args.device, net)
         if epoch_id % 4 == 0:
             save_network_for_backup(args, net, optimizer, epoch_id, lr)
 
