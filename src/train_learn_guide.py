@@ -33,7 +33,7 @@ def tensor2SFTensor(tensor):
 
 
 def common_init(args):
-    net = sface.SphereFace(torch.load('../../pretrained/sface.pth'))
+    net = sface.SphereFace(pretrain=torch.load('../../pretrained/sface.pth'))
     net.to(args.device)
     if len(args.gpu_ids) > 1:
         net = nn.DataParallel(net)
@@ -47,7 +47,7 @@ def common_init(args):
 def backup_init(args):
     checkpoint = torch.load(args.model_file)  # 加载断点
 
-    net = net_resolution.get_model()
+    net = sface.SphereFace()
     net.load_state_dict(checkpoint['net'])  # 加载模型可学习参数
     net.to(args.device)
     if len(args.gpu_ids) > 1:
@@ -100,10 +100,12 @@ def main():
         net.train()
         for batch_id, inputs in enumerate(bar):
             lr = optimizer.param_groups[0]['lr']
-            index = np.random.randint(1, 4 + 1)
+            index = np.random.randint(1, 3 + 1)
             lr_face = inputs['down{}'.format(2 ** index)].to(args.device)
             hr_face = inputs['down1'].to(args.device)
             target = inputs['id'].to(args.device)
+            lr_face = nn.functional.interpolate(lr_face, size=(112, 96), mode='bilinear', align_corners=False)
+
             lr_classes = net(lr_face)
             fnet(tensor2SFTensor(hr_face)).detach()
             lossd, lossd_class, lossd_feature = criterion(lr_classes, target, net.getFeature(), fnet.getFeature())

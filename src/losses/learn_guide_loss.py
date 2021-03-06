@@ -11,6 +11,6 @@ class LearnGuideLoss(nn.Module):
 
     def forward(self, classes, target, lr_feature, hr_feature):
         loss_class = self.sphere_loss(classes, target)
-        loss_feature = F.pairwise_distance(lr_feature, hr_feature, p=2)
+        loss_feature = F.pairwise_distance(lr_feature, hr_feature, p=2).mean()
         loss = loss_class + loss_feature * self.gamma
-        return loss, loss_class.float(), loss_feature.float()
+        return loss.mean(), loss_class.float(), loss_feature.float()

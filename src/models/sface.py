@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from models.sface_celeba import AngleLinear
+
 
 def Make_layer(block, num_filters, num_of_layer):
     layers = []
@@ -50,21 +52,23 @@ def sface():
 
 
 class SphereFace(nn.Module):
-    def __init__(self, type='student',feature_dim=512, pretrain=None):
+    def __init__(self, type='student', feature_dim=10178, pretrain=None):
         super(SphereFace, self).__init__()
         model = sface()
         if pretrain:
             model.load_state_dict(pretrain)
-        if type=='student':
-            self.fc = nn.Linear(512 * 7 * 6, feature_dim)
-        elif type=='teacher':
-            self.fc = nn.Sequential(*list(model)[-1:])
-        self.convs = nn.Sequential(*list(model)[:-1])
+        if type == 'student':
+            self.fc_angle = AngleLinear(512, feature_dim)
+        else:
+            self.fc_angle = None
+        self.sface = nn.Sequential(*list(model))
         self.feature = []
 
     def forward(self, x):
-        self.feature = self.convs(x)
-        return self.fc(self.feature)
+        self.feature = self.sface(x)
+        if self.fc_angle:
+            return self.fc_angle(self.feature)
+        return self.feature
 
     def getFeature(self):
         return self.feature
