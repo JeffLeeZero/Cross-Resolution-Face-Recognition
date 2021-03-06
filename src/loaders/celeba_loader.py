@@ -42,9 +42,16 @@ class CelebADatasetDownsample(torch.utils.data.Dataset):
         df = pd.read_csv(CELEBA_CSV, delimiter=",")
         self.faces_path = df.values[:, 0]
         self.landmarks = df.values[:, 1:]
+        self.id = {}
+        with open(CELEBA_ID) as f:
+            ids = f.readlines()
+        for item in ids:
+            id = item.split()
+            self.id[id[0]] = id[1].split('"')[0]
 
     def __getitem__(self, index):
-        img = cv2.imread(CELEBA_ROOT + self.faces_path[index])
+        path = self.faces_path[index]
+        img = cv2.imread(CELEBA_ROOT + path)
         face = common.alignment(img, self.landmarks[index].reshape(-1, 2))
 
         if random.random() > 0.5:
@@ -53,12 +60,13 @@ class CelebADatasetDownsample(torch.utils.data.Dataset):
         face_down4 = cv2.resize(face, None, fx=1 / 4, fy=1 / 4, interpolation=cv2.INTER_CUBIC)
         face_down8 = cv2.resize(face, None, fx=1 / 8, fy=1 / 8, interpolation=cv2.INTER_CUBIC)
         face_down16 = cv2.resize(face, None, fx=1 / 16, fy=1 / 16, interpolation=cv2.INTER_CUBIC)
-
+        id = int(self.id[path])
         face_dict = {'down1': common.face_ToTensor(face),
                      'down2': common.face_ToTensor(face_down2),
                      'down4': common.face_ToTensor(face_down4),
                      'down8': common.face_ToTensor(face_down8),
-                     'down16': common.face_ToTensor(face_down16)}
+                     'down16': common.face_ToTensor(face_down16),
+                     'id': id}
 
         return face_dict
 

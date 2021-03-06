@@ -9,4 +9,5 @@ def get_args():
 	parser.add_argument('--lfw_bs', default=128, type=int, help='LFW batch size')
 	parser.add_argument('--gpu_ids', default='0', type=str, help='gpu ids: e.g. 0 or 0,1 or 0,2')
 	parser.add_argument('--Continue', type=bool, default=False, help='model is continue to train')
+	parser.add_argument('--isVal', type=bool, default=False)
 	return parser

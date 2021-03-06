@@ -2,19 +2,19 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
-from models import net_resolution2, sface, edsr
+from models import net_resolution, sface, edsr
 
 import os
 import numpy as np
 from tqdm import tqdm
-from arguments import train_args, common_args, test_args
+from arguments import train_args
 from util import common
 from loaders import celeba_loader
 import lfw_verification as val
-
+from losses.learn_guide_loss import LearnGuideLoss
 
 def save_network(args, net, epoch):
-    save_filename = 'net_resolution_epoch{}.pth'.format(epoch)
+    save_filename = 'learn_guide_epoch{}.pth'.format(epoch)
     save_dir = os.path.join(args.checkpoints_dir, args.name)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -33,10 +33,7 @@ def tensor2SFTensor(tensor):
 
 
 def common_init(args):
-    net = net_resolution2.get_pretrain_modle(srnet_path="../../pretrained/srnet.pth",
-                                            fnet_path="../../pretrained/sface.pth")
-    net.freeze("convs")
-    net.freeze("srnet")
+    net = sface.SphereFace(torch.load('../../pretrained/sface.pth'))
     net.to(args.device)
     if len(args.gpu_ids) > 1:
         net = nn.DataParallel(net)
@@ -50,11 +47,8 @@ def common_init(args):
 def backup_init(args):
     checkpoint = torch.load(args.model_file)  # 加载断点
 
-    ## Setup SRNet
-    net = net_resolution2.get_model()
+    net = net_resolution.get_model()
     net.load_state_dict(checkpoint['net'])  # 加载模型可学习参数
-    net.freeze("convs")
-    net.freeze("srnet")
     net.to(args.device)
     if len(args.gpu_ids) > 1:
         srnet = nn.DataParallel(net)
@@ -76,7 +70,7 @@ def save_network_for_backup(args, srnet, optimizer, scheduler, epoch_id):
         'scheduler': scheduler.state_dict()
     }
 
-    save_filename = 'backup_epoch{}.pth'.format(epoch_id)
+    save_filename = 'learn_guide_backup_epoch{}.pth'.format(epoch_id)
     save_dir = os.path.join(args.backup_dir, args.name)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -84,27 +78,11 @@ def save_network_for_backup(args, srnet, optimizer, scheduler, epoch_id):
     torch.save(checkpoint, save_path)
 
 
-def val():
-    args = train_args.get_args()
-    fnet = sface.sface()
-    fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
-    fnet.to(args.device)
-    if args.Continue:
-        net, optimizer, last_epoch, scheduler = backup_init(args)
-    else:
-        net, optimizer, last_epoch, scheduler = common_init(args)
-    val.run("sface", -1, 8, 96, 112, 32, args.device, fnet, net)
-    val.run("sface", -1, 6, 96, 112, 32, args.device, fnet, net)
-    val.run("sface", -1, 4, 96, 112, 32, args.device, fnet, net)
-
-
-
-def train():
+def main():
     args = train_args.get_args()
     dataloader = celeba_loader.get_loader_downsample(args)
     ## Setup FNet
-    fnet = sface.sface()
-    fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
+    fnet = sface.SphereFace(type='teacher', pretrain=torch.load('../../pretrained/sface.pth'))
     fnet.to(args.device)
     if args.Continue:
         net, optimizer, last_epoch, scheduler = backup_init(args)
@@ -112,43 +90,41 @@ def train():
         net, optimizer, last_epoch, scheduler = common_init(args)
     best_acc = 0.0
     epochs = args.epoch
+    criterion = LearnGuideLoss()
     for epoch_id in range(last_epoch + 1, epochs):
-        if epoch_id == 6:
-            net.unfreeze("convs")
         bar = tqdm(dataloader, total=len(dataloader), ncols=0)
         loss = [0.0, 0.0, 0.0, 0.0, 0.0]
+        loss_class = [0.0, 0.0, 0.0, 0.0, 0.0]
+        loss_feature = [0.0, 0.0, 0.0, 0.0, 0.0]
         count = [0, 0, 0, 0, 0]
+        net.train()
         for batch_id, inputs in enumerate(bar):
-            net.train()
-            scheduler.step()  # update learning rate
             lr = optimizer.param_groups[0]['lr']
-            index = np.random.randint(2, 3 + 1)
+            index = np.random.randint(1, 4 + 1)
             lr_face = inputs['down{}'.format(2 ** index)].to(args.device)
-            mr_face = inputs['down{}'.format(2 ** (index - 2))].to(args.device)
-            if index == 2:
-                hr_face = mr_face
-            else:
-                hr_face = inputs['down1'].to(args.device)
-
-            w = torch.full([lr_face.shape[0], 1], lr_face.shape[2]).to(args.device)
-            h = torch.full([lr_face.shape[0], 1], lr_face.shape[3]).to(args.device)
-            sr_face_feature, _ = net(lr_face, w, h)
-            hr_face_feature = fnet(tensor2SFTensor(hr_face)).detach()
-            loss_feature = 1 - torch.nn.CosineSimilarity()(sr_face_feature, hr_face_feature)
-            loss_feature = loss_feature.mean()
-            loss[index] += loss_feature.float()
+            hr_face = inputs['down1'].to(args.device)
+            target = inputs['id'].to(args.device)
+            lr_classes = net(lr_face)
+            fnet(tensor2SFTensor(hr_face)).detach()
+            lossd, lossd_class, lossd_feature = criterion(lr_classes, target, net.getFeature(), fnet.getFeature())
+            loss[index] += lossd.float()
+            loss_class[index] += lossd_class
+            loss_feature[index] += lossd_feature
             count[index] += 1
             optimizer.zero_grad()
-            loss_feature.backward()
+            lossd.backward()
             optimizer.step()
+            scheduler.step()  # update learning rate
             # display
             description = "epoch{}".format(epoch_id)
-            description += 'loss: {:.3f} '.format(loss[index] / count[index])
+            description += 'loss: {:.4f} '.format(loss[index] / count[index])
+            description += 'loss_class: {:.4f} '.format(loss_class[index] / count[index])
+            description += 'loss_feature: {:.4f} '.format(loss_feature[index] / count[index])
             description += 'lr: {:.3e} '.format(lr)
             description += 'index: {:.0f} '.format(index)
             bar.set_description(desc=description)
 
-        acc = val.run("sface", -1, 16, 96, 112, 32, args.device, fnet, net)
+        acc = val.run("sface", -1, 16, 96, 112, 32, args.device, net, net)
         if acc > best_acc:
             best_acc = acc
             save_network_for_backup(args, net, optimizer, scheduler, epoch_id)
@@ -158,8 +134,4 @@ def train():
 
 
 if __name__ == '__main__':
-    args = common_args.get_args()
-    if args.isVal:
-        train()
-    else:
-        val()
+    main()
