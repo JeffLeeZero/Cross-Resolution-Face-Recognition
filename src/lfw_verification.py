@@ -83,11 +83,11 @@ def run(fnet_type, size, down_factor, w, h, lfw_bs, device, fnet, net=None, step
     return mean_acc
 
 
-def val_sphereface(size, w, h, lfw_bs, device, net, step=None):
+def val_sphereface(size, w, h, lfw_bs, device, net, step=None, index=1):
 
     net.eval()
     tensor_norm = tensor_sface_norm
-    dataloader = lfw_loader.get_loader(size, 1, w, h, lfw_bs)
+    dataloader = lfw_loader.get_loader(size, index, w, h, lfw_bs)
     features11_total, features12_total = [], []
     features21_total, features22_total = [], []
     labels = []
