@@ -91,6 +91,9 @@ def main():
     best_acc = 0.0
     epochs = args.epoch
     criterion = LearnGuideLoss()
+    net.setVal(True)
+    acc = val.run("sface", -1, 16, 96, 112, 32, args.device, net, net)
+    net.setVal(False)
     for epoch_id in range(last_epoch + 1, epochs):
         bar = tqdm(dataloader, total=len(dataloader), ncols=0)
         loss = [0.0, 0.0, 0.0, 0.0, 0.0]
@@ -126,7 +129,9 @@ def main():
             description += 'index: {:.0f} '.format(index)
             bar.set_description(desc=description)
 
+        net.setVal(True)
         acc = val.run("sface", -1, 16, 96, 112, 32, args.device, net, net)
+        net.setVal(False)
         if acc > best_acc:
             best_acc = acc
             save_network_for_backup(args, net, optimizer, scheduler, epoch_id)
