@@ -92,7 +92,7 @@ def main():
     epochs = args.epoch
     criterion = LearnGuideLoss()
     net.setVal(True)
-    acc = val.run("sface", -1, 16, 96, 112, 32, args.device, net, net)
+    acc = val.val_sphereface(-1, 96, 112, 32, args.device, net, index=8)
     net.setVal(False)
     for epoch_id in range(last_epoch + 1, epochs):
         bar = tqdm(dataloader, total=len(dataloader), ncols=0)
@@ -130,7 +130,7 @@ def main():
             bar.set_description(desc=description)
 
         net.setVal(True)
-        acc = val.val_sphereface(-1, 96, 112, 32, args.device, net, 8)
+        acc = val.val_sphereface(-1, 96, 112, 32, args.device, net, index=8)
         net.setVal(False)
         if acc > best_acc:
             best_acc = acc

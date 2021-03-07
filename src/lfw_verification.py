@@ -11,6 +11,8 @@ from tqdm import tqdm
 from loaders import lfw_loader
 from util.common import KFold, find_best_threshold, eval_acc, tensor_pair_cosine_distance, \
     tensor_sface_norm, tensors_cvBicubic_resize
+import torch.nn.functional as functional
+
 
 
 def run(fnet_type, size, down_factor, w, h, lfw_bs, device, fnet, net=None, step=None):
@@ -98,6 +100,9 @@ def val_sphereface(size, w, h, lfw_bs, device, net, step=None, index=1):
             img1, img1_flip = img1.to(device), img1_flip.to(device)
             img2, img2_flip = img2.to(device), img2_flip.to(device)
             img1, img1_flip = tensor_norm(img1), tensor_norm(img1_flip)
+            img2, img2_flip = tensor_norm(img2), tensor_norm(img2_flip)
+            img2 = functional.interpolate(img2, size=(112, 96), mode='bilinear', align_corners=False)
+            img2_flip = functional.interpolate(img2_flip, size=(112, 96), mode='bilinear', align_corners=False)
             features11 = net(img1)
             features12 = net(img1_flip)
             features21 = net(img2)
