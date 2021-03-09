@@ -84,6 +84,7 @@ def main():
     ## Setup FNet
     fnet = sface.SphereFace(type='teacher', pretrain=torch.load('../../pretrained/sface.pth'))
     fnet.to(args.device)
+    common.freeze(fnet)
     if args.Continue:
         net, optimizer, last_epoch, scheduler = backup_init(args)
     else:
@@ -91,9 +92,6 @@ def main():
     best_acc = 0.0
     epochs = args.epoch
     criterion = LearnGuideLoss()
-    net.setVal(True)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, net, index=8)
-    net.setVal(False)
     for epoch_id in range(last_epoch + 1, epochs):
         bar = tqdm(dataloader, total=len(dataloader), ncols=0)
         loss = [0.0, 0.0, 0.0, 0.0, 0.0]
@@ -109,8 +107,8 @@ def main():
             target = inputs['id'].to(args.device)
             lr_face = nn.functional.interpolate(lr_face, size=(112, 96), mode='bilinear', align_corners=False)
 
-            lr_classes = net(lr_face)
-            fnet(tensor2SFTensor(hr_face)).detach()
+            lr_classes = net(tensor2SFTensor(lr_face))
+            fnet(tensor2SFTensor(hr_face))
             lossd, lossd_class, lossd_feature = criterion(lr_classes, target, net.getFeature(), fnet.getFeature())
             loss[index] += lossd.float()
             loss_class[index] += lossd_class

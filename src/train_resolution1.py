@@ -100,7 +100,6 @@ def val():
 
 
 def train():
-    args = train_args.get_args()
     dataloader = celeba_loader.get_loader_downsample(args)
     ## Setup FNet
     fnet = sface.sface()
@@ -156,10 +155,9 @@ def train():
     # Save the final SR model
     save_network(args, net, epochs)
 
-
+args = train_args.get_args()
 if __name__ == '__main__':
-    args = common_args.get_args()
-    if args.isVal:
+    if args.type == 'train':
         train()
     else:
         val()

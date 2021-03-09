@@ -99,10 +99,11 @@ def val_sphereface(size, w, h, lfw_bs, device, net, step=None, index=1):
             bs = len(targets)
             img1, img1_flip = img1.to(device), img1_flip.to(device)
             img2, img2_flip = img2.to(device), img2_flip.to(device)
-            img1, img1_flip = tensor_norm(img1), tensor_norm(img1_flip)
-            img2, img2_flip = tensor_norm(img2), tensor_norm(img2_flip)
             img2 = functional.interpolate(img2, size=(112, 96), mode='bilinear', align_corners=False)
             img2_flip = functional.interpolate(img2_flip, size=(112, 96), mode='bilinear', align_corners=False)
+
+            img1, img1_flip = tensor_norm(img1), tensor_norm(img1_flip)
+            img2, img2_flip = tensor_norm(img2), tensor_norm(img2_flip)
             features11 = net(img1)
             features12 = net(img1_flip)
             features21 = net(img2)
