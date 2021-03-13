@@ -6,7 +6,7 @@ from losses.sphere_loss import SphereLoss
 class LearnGuideLoss(nn.Module):
     def __init__(self):
         super(LearnGuideLoss, self).__init__()
-        self.gamma = 0.5
+        self.gamma = 1
         self.sphere_loss = SphereLoss()
 
     def forward(self, classes, target, lr_feature, hr_feature):

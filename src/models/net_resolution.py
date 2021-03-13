@@ -23,7 +23,9 @@ class NetResolution(nn.Module):
         )
 
     def forward(self, x, w, h):
+        print(x)
         sr_face = self.srnet(x)
+        print(sr_face)
         x = functional.interpolate(sr_face, size=(112, 96), mode='bilinear', align_corners=False)
         x = common.tensor2SFTensor(x)
         x = self.convs(x)

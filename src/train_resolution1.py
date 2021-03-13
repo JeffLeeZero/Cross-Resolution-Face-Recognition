@@ -84,7 +84,7 @@ def save_network_for_backup(args, srnet, optimizer, scheduler, epoch_id):
     torch.save(checkpoint, save_path)
 
 
-def val():
+def eval():
     args = train_args.get_args()
     fnet = sface.sface()
     fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
@@ -93,6 +93,8 @@ def val():
         net, optimizer, last_epoch, scheduler = backup_init(args)
     else:
         net, optimizer, last_epoch, scheduler = common_init(args)
+    val.run("sface", -1, 16, 96, 112, 32, args.device, fnet, net)
+    val.run("sface", -1, 12, 96, 112, 32, args.device, fnet, net)
     val.run("sface", -1, 8, 96, 112, 32, args.device, fnet, net)
     val.run("sface", -1, 6, 96, 112, 32, args.device, fnet, net)
     val.run("sface", -1, 4, 96, 112, 32, args.device, fnet, net)
@@ -105,6 +107,7 @@ def train():
     fnet = sface.sface()
     fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
     fnet.to(args.device)
+    common.freeze(fnet)
     if args.Continue:
         net, optimizer, last_epoch, scheduler = backup_init(args)
     else:
@@ -160,4 +163,4 @@ if __name__ == '__main__':
     if args.type == 'train':
         train()
     else:
-        val()
+        eval()

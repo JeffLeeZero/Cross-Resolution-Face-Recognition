@@ -61,15 +61,16 @@ class SphereFace(nn.Module):
             self.fc_angle = AngleLinear(512, feature_dim)
         else:
             self.fc_angle = None
-        children = model.children()
-        self.convs = nn.Sequential(*list(children)[:-1])
-        self.fc = nn.Sequential(*list(children)[-1:])
+        self.convs = nn.Sequential(*list(model.children())[:-1])
+        self.fc = nn.Sequential(*list(model.children())[-1:])
         self.feature = []
         self.val = False
 
     def forward(self, x):
-        self.feature = self.convs(x)
-        x = self.fc(self.feature)
+        #self.feature = self.convs(x)
+        #x = self.fc(self.feature)
+        x = self.fc(self.convs(x))
+        self.feature = x
         if self.fc_angle and not self.val:
             return self.fc_angle(x)
         return x

@@ -25,5 +25,6 @@ def get_args():
 	parser.add_argument('--backup_dir', type=str, default='../backups')
 	parser.add_argument('--model_file', type=str, default='../backups/master/backup.pth')
 	parser.add_argument('--epoch', type=int, default=20)
+	parser.add_argument('--net_pth', type=str, default='../../pretrained/sface.pth')
 	args = modify_args.run(parser)
 	return args

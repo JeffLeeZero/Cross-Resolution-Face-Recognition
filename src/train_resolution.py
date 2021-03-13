@@ -82,12 +82,12 @@ def save_network_for_backup(args, srnet, optimizer, scheduler, epoch_id):
 
 
 def main():
-    args = train_args.get_args()
     dataloader = celeba_loader.get_loader_downsample(args)
     ## Setup FNet
     fnet = sface.sface()
     fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
     fnet.to(args.device)
+    common.freeze(fnet)
     if args.Continue:
         net, optimizer, last_epoch, scheduler = backup_init(args)
     else:
@@ -139,5 +139,25 @@ def main():
     save_network(args, net, epochs)
 
 
+def eval():
+    dataloader = celeba_loader.get_loader_downsample(args)
+    ## Setup FNet
+    fnet = sface.sface()
+    fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
+    fnet.to(args.device)
+    net = net_resolution.get_model()
+    net.load_state_dict(torch.load(args.model_file))
+    net.to(args.device)
+    acc = val.run("sface", -1, 16, 96, 112, 32, args.device, fnet, net)
+    acc = val.run("sface", -1, 12, 96, 112, 32, args.device, fnet, net)
+    acc = val.run("sface", -1, 8, 96, 112, 32, args.device, fnet, net)
+    acc = val.run("sface", -1, 6, 96, 112, 32, args.device, fnet, net)
+    acc = val.run("sface", -1, 4, 96, 112, 32, args.device, fnet, net)
+
+
+args = train_args.get_args()
 if __name__ == '__main__':
-    main()
+    if args.type == 'train':
+        main()
+    else:
+        eval()

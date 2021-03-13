@@ -98,17 +98,17 @@ def tensor_pair_cosine_distance(features11, features12, features21, features22, 
     return scores
 
 
-def tensors_cvBicubic_resize(args, tensors):
+def tensors_cvBicubic_resize(h, w, device, tensors):
     _, _, h_, w_ = tensors.shape
-    if h_ == args.h and w_ == args.w:
+    if h_ == h and w_ == w:
         return tensors
     else:
         image = np.uint8((tensors.cpu().numpy() + 1) * 0.5 * 255.0)
         image = np.transpose(image, (0, 2, 3, 1))
-        image = [cv2.resize(img, dsize=(args.w, args.h), interpolation=cv2.INTER_CUBIC) for img in image]
+        image = [cv2.resize(img, dsize=(w, h), interpolation=cv2.INTER_CUBIC) for img in image]
         image = np.asarray(image)
         image = np.float32(np.transpose(image, (0, 3, 1, 2)))
-        image = torch.Tensor(image).to(args.device)
+        image = torch.Tensor(image).to(device)
         image = (image - 127.5) / 127.5
         return image
 
