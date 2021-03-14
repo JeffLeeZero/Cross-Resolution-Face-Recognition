@@ -11,6 +11,7 @@ from util import common
 from losses.sphere_loss import SphereLoss
 import lfw_verification as val
 
+
 def backup_init(args):
     checkpoint = torch.load(args.model_file)
     net = sface_celeba.get_net()
@@ -93,10 +94,11 @@ def main():
             total += targets.size(0)
             correct += predicted.eq(targets.data).cpu().sum()
             description = "epoch {}: mean_loss={:.5f} | mean_acc={:.3f}% ({}/{}) | loss={:.5f}".format(epoch_id,
-                                                                                           train_loss / (batch_idx + 1),
-                                                                                           100.0 * correct / total,
-                                                                                           correct, total,
-                                                                                           lossd)
+                                                                                                       train_loss / (
+                                                                                                                   batch_idx + 1),
+                                                                                                       100.0 * correct / total,
+                                                                                                       correct, total,
+                                                                                                       lossd)
             bar.set_description(desc=description)
         val.val_sphereface(-1, 96, 112, 32, args.device, net)
         if epoch_id % 4 == 0:

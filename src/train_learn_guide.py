@@ -110,7 +110,7 @@ def main():
             lr_classes = net(tensor2SFTensor(lr_face))
             fnet(tensor2SFTensor(hr_face))
             lossd, lossd_class, lossd_feature = criterion(lr_classes, target, net.getFeature(), fnet.getFeature())
-            loss[index] += lossd.float()
+            loss[index] += lossd.item()
             loss_class[index] += lossd_class
             loss_feature[index] += lossd_feature
             count[index] += 1

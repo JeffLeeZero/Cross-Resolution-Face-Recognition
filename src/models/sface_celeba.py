@@ -1,4 +1,3 @@
-from models import sface
 import torch
 import torch.nn as nn
 from util import common
