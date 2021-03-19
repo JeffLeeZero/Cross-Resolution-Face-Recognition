@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
-from models import net_resolution, sface, edsr
+from models import fusion_model1, sface, edsr
 
 import os
 import numpy as np
@@ -11,7 +11,7 @@ from arguments import train_args
 from util import common
 from loaders import celeba_loader
 import lfw_verification as val
-from losses.learn_guide_loss import LearnGuideLoss
+from losses.fusion_loss import FusionLoss
 
 
 def save_network(args, net, epoch):
@@ -34,7 +34,7 @@ def tensor2SFTensor(tensor):
 
 
 def common_init(args):
-    net = sface.SphereFace(pretrain=torch.load('../../pretrained/sface.pth'))
+    net = fusion_model1.FusionModel()
     net.to(args.device)
     if len(args.gpu_ids) > 1:
         net = nn.DataParallel(net)
@@ -80,19 +80,38 @@ def save_network_for_backup(args, srnet, optimizer, scheduler, epoch_id):
     torch.save(checkpoint, save_path)
 
 
-def main():
-    dataloader = celeba_loader.get_loader_downsample(args)
+def initModels():
     ## Setup FNet
-    fnet = sface.SphereFace(type='teacher', pretrain=torch.load('../../pretrained/sface.pth'))
+    fnet = sface.sface()
+    fnet.load_state_dict(torch.load('../pretrained/sface.pth'))
     fnet.to(args.device)
     common.freeze(fnet)
+    srnet = edsr.Edsr()
+    srnet.load_state_dict(torch.load('../pretrained/my_srnet.pth'))
+    srnet.to(args.device)
+    common.freeze(srnet)
+    lr_fnet = sface.SphereFace()
+    lr_fnet.load_state_dict(torch.load())
+    lr_fnet.to(args.device)
+    lr_fnet.setVal(True)
+    common.freeze(lr_fnet)
+    fnet.eval()
+    srnet.eval()
+    lr_fnet.eval()
+    return fnet, srnet, lr_fnet
+
+
+def main():
+    dataloader = celeba_loader.get_loader_downsample(args)
+    fnet, srnet, lr_fnet = initModels()
     if args.Continue:
         net, optimizer, last_epoch, scheduler = backup_init(args)
     else:
         net, optimizer, last_epoch, scheduler = common_init(args)
+
     best_acc = 0.0
     epochs = args.epoch
-    criterion = LearnGuideLoss()
+    criterion = FusionLoss()
     for epoch_id in range(last_epoch + 1, epochs):
         bar = tqdm(dataloader, total=len(dataloader), ncols=0)
         loss = [0.0, 0.0, 0.0, 0.0, 0.0]
@@ -106,11 +125,10 @@ def main():
             lr_face = inputs['down{}'.format(2 ** index)].to(args.device)
             hr_face = inputs['down1'].to(args.device)
             target = inputs['id'].to(args.device)
-            lr_face = nn.functional.interpolate(lr_face, size=(112, 96), mode='bilinear', align_corners=False)
-
-            lr_classes = net(tensor2SFTensor(lr_face))
-            fnet(tensor2SFTensor(hr_face))
-            lossd, lossd_class, lossd_feature = criterion(lr_classes, target, net.getFeature(), fnet.getFeature())
+            feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, lr_face)
+            target_feature = fnet(common.tensor2SFTensor(hr_face)).detach()
+            feature, classes = net(feature1, feature2)
+            lossd, lossd_class, lossd_feature = criterion(classes, target, feature, target_feature)
             loss[index] += lossd.item()
             loss_class[index] += lossd_class
             loss_feature[index] += lossd_feature
@@ -127,35 +145,13 @@ def main():
             description += 'lr: {:.3e} '.format(lr)
             description += 'index: {:.0f} '.format(index)
             bar.set_description(desc=description)
-
-        net.setVal(True)
-        acc = val.val_sphereface(-1, 96, 112, 32, args.device, net, index=8)
-        net.setVal(False)
+        acc = val.fusion_val(-1, 8, 64, args.device, srnet, fnet, lr_fnet, net)
         if acc > best_acc:
             best_acc = acc
             save_network_for_backup(args, net, optimizer, scheduler, epoch_id)
 
     # Save the final SR model
     save_network(args, net, epochs)
-
-
-def eval():
-    net = sface.SphereFace()
-    print(net)
-    fnet = sface.SphereFace(type='teacher', pretrain=torch.load('../../pretrained/sface.pth'))
-    fnet.to(args.device)
-    checkpoint = torch.load(args.model_file)
-    net.load_state_dict(checkpoint['net'])  # 加载模型可学习参数
-    net.to(args.device)
-    net.setVal(True)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=12)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=8)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=7)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=6)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=4)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=1)
-
-
 
 
 args = train_args.get_args()

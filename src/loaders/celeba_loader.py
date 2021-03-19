@@ -6,7 +6,7 @@ import cv2
 import pandas as pd
 import random
 
-CELEBA_ROOT = '../../img_align_celeba/'
+CELEBA_ROOT = '../../Datasets/CelebA/img_celeba/'#img_align_celeba/'
 CELEBA_CSV = '../data/celeba_clean_landmarks.csv'
 CELEBA_ID = '../data/identity_CelebA.txt'
 
