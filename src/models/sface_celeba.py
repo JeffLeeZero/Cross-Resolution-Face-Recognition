@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from util import common
-from . import sface
+from models.sface import sface
 import math
 from torch.autograd import Variable
 from torch.nn import Parameter
@@ -81,13 +81,13 @@ class SfaceCelebA(nn.Module):
 
 
 def get_net():
-    pretrain_net = sface.sface()
+    pretrain_net = sface()
     net = SfaceCelebA(pretrain_net)
     return net
 
 
 def get_net_from_pretrain(sface_path):
-    pretrain_net = sface.sface()
+    pretrain_net = sface()
     pretrain_net.load_state_dict(torch.load(sface_path))
     net = SfaceCelebA(pretrain_net)
     return net

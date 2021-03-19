@@ -15,7 +15,7 @@ from losses.fusion_loss import FusionLoss
 
 
 def save_network(args, net, epoch):
-    save_filename = 'learn_guide_epoch{}.pth'.format(epoch)
+    save_filename = 'fusion1_epoch{}.pth'.format(epoch)
     save_dir = os.path.join(args.checkpoints_dir, args.name)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -72,7 +72,7 @@ def save_network_for_backup(args, srnet, optimizer, scheduler, epoch_id):
         'scheduler': scheduler.state_dict()
     }
 
-    save_filename = 'learn_guide_backup_epoch{}.pth'.format(epoch_id)
+    save_filename = 'fusion1_backup_epoch{}.pth'.format(epoch_id)
     save_dir = os.path.join(args.backup_dir, args.name)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -83,7 +83,7 @@ def save_network_for_backup(args, srnet, optimizer, scheduler, epoch_id):
 def initModels():
     ## Setup FNet
     fnet = sface.sface()
-    fnet.load_state_dict(torch.load('../pretrained/sface.pth'))
+    fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
     fnet.to(args.device)
     common.freeze(fnet)
     srnet = edsr.Edsr()

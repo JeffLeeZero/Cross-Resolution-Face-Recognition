@@ -25,7 +25,10 @@ class FusionModel(nn.Module):
         classes = self.angle(feature)
         return feature, classes
 
+    def setVal(self, val):
+        self.val = val
 
+        
 def getFeatures(srnet, fnet, lr_fnet, lr_face):
     sr_face = srnet(lr_face.clone().detach()).detach()
     # Feature loss
@@ -34,3 +37,4 @@ def getFeatures(srnet, fnet, lr_fnet, lr_face):
     lr_face = nn.functional.interpolate(lr_face, size=(112, 96), mode='bilinear', align_corners=False)
     lr_face = common.tensor2SFTensor(lr_face)
     feature2 = lr_fnet(lr_face).detach()
+    return feature1, feature2
