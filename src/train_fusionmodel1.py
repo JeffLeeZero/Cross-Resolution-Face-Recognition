@@ -48,7 +48,7 @@ def common_init(args):
 def backup_init(args):
     checkpoint = torch.load(args.model_file)  # 加载断点
 
-    net = sface.SphereFace()
+    net = fusion_model1.FusionModel()
     net.load_state_dict(checkpoint['net'])  # 加载模型可学习参数
     net.to(args.device)
     if len(args.gpu_ids) > 1:
@@ -87,11 +87,11 @@ def initModels():
     fnet.to(args.device)
     common.freeze(fnet)
     srnet = edsr.Edsr()
-    srnet.load_state_dict(torch.load('../pretrained/my_srnet.pth'))
+    srnet.load_state_dict(torch.load('../../results/raw_backupepoch11.pth')['net'])
     srnet.to(args.device)
     common.freeze(srnet)
     lr_fnet = sface.SphereFace()
-    lr_fnet.load_state_dict(torch.load())
+    lr_fnet.load_state_dict(torch.load('../../results/learn_guide_backup_epoch18.pth')['net'])
     lr_fnet.to(args.device)
     lr_fnet.setVal(True)
     common.freeze(lr_fnet)
@@ -152,6 +152,15 @@ def main():
 
     # Save the final SR model
     save_network(args, net, epochs)
+
+
+def eval():
+    fnet, srnet, lr_fnet = initModels()
+    if args.Continue:
+        net, optimizer, last_epoch, scheduler = backup_init(args)
+    else:
+        net, optimizer, last_epoch, scheduler = common_init(args)
+    acc = val.val_simple_fusion(-1, 8, 16, args.device, srnet, fnet, lr_fnet)
 
 
 args = train_args.get_args()

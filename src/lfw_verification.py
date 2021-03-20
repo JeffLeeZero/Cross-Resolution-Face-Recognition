@@ -302,10 +302,10 @@ def val_simple_fusion(size, down_factor, lfw_bs, device, srnet, fnet, lr_fnet, s
             img1, img1_flip = img1.to(device), img1_flip.to(device)
             img2, img2_flip = img2.to(device), img2_flip.to(device)
             img1, img1_flip = tensor_norm(img1), tensor_norm(img1_flip)
-            features11 = simple_fusion(srnet, fnet, lr_fnet, img1)
-            features12 = simple_fusion(srnet, fnet, lr_fnet, img1_flip)
-            features21 = simple_fusion(srnet, fnet, lr_fnet, img2)
-            features22 = simple_fusion(srnet, fnet, lr_fnet, img2_flip)
+            features11 = simple_fusion(srnet, fnet, lr_fnet, img1).detach()
+            features12 = simple_fusion(srnet, fnet, lr_fnet, img1_flip).detach()
+            features21 = simple_fusion(srnet, fnet, lr_fnet, img2).detach()
+            features22 = simple_fusion(srnet, fnet, lr_fnet, img2_flip).detach()
             features11_total += [features11]
             features12_total += [features12]
             features21_total += [features21]

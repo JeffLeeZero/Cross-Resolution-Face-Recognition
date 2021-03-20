@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from util import common
-from models.sface import sface
 import math
 from torch.autograd import Variable
 from torch.nn import Parameter
