@@ -12,8 +12,7 @@ class FusionModel(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(input_size, 256),
             nn.ReLU(),
-            nn.Linear(256, output_size),
-            nn.ReLU()
+            nn.Linear(256, output_size)
         )
         self.angle = AngleLinear(output_size, feature_dim)
 
@@ -28,6 +27,30 @@ class FusionModel(nn.Module):
     def setVal(self, val):
         self.val = val
 
+
+class FusionModel2(nn.Module):
+    def __init__(self, input_size=1024, output_size=512, feature_dim=10178):
+        super(FusionModel2, self).__init__()
+        self.val = False
+        self.fc = nn.Sequential(
+            nn.Linear(input_size, 512 * 3),
+            nn.ReLU(),
+            nn.Linear(512 * 3, 512 * 3),
+            nn.ReLU(),
+            nn.Linear(512 * 3, output_size),
+        )
+        self.angle = AngleLinear(output_size, feature_dim)
+
+    def forward(self, feature1, feature2):
+        x = torch.cat([feature1, feature2], dim=1)
+        feature = self.fc(x)
+        if self.val:
+            return feature, None
+        classes = self.angle(feature)
+        return feature, classes
+
+    def setVal(self, val):
+        self.val = val
         
 def getFeatures(srnet, fnet, lr_fnet, lr_face):
     sr_face = srnet(lr_face.clone().detach()).detach()

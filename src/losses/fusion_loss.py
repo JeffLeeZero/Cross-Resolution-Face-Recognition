@@ -8,11 +8,10 @@ class FusionLoss(nn.Module):
         super(FusionLoss, self).__init__()
         self.gamma = 1
         self.sphere_loss = SphereLoss()
-        self.l2_loss = nn.MSELoss()
 
     def forward(self, classes, target, feature, target_feature):
         loss_class = self.sphere_loss(classes, target)
-        loss_feature = self.l2_loss(feature, target_feature)
+        loss_feature = F.pairwise_distance(feature, target_feature, p=2).mean()
         loss_feature = loss_feature.mean()
         loss = loss_class + loss_feature * self.gamma
         return loss.mean(), loss_class.item(), loss_feature.item()
