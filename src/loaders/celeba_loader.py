@@ -6,9 +6,10 @@ import cv2
 import pandas as pd
 import random
 
-CELEBA_ROOT = '../../Datasets/CelebA/img_celeba/'#img_align_celeba/'
+CELEBA_ROOT = '../../Datasets/CelebA/img_celeba/'  # img_align_celeba/'
 CELEBA_CSV = '../data/celeba_clean_landmarks.csv'
 CELEBA_ID = '../data/identity_CelebA.txt'
+CELEBA_FEATURES = '../../Datasets/celeba_features.pth'
 
 
 class CelebADataset(torch.utils.data.Dataset):
@@ -74,6 +75,28 @@ class CelebADatasetDownsample(torch.utils.data.Dataset):
         return len(self.faces_path)
 
 
+class CelebADatasetsFeatures(torch.utils.data.Dataset):
+    def __init__(self):
+        super(CelebADatasetsFeatures, self).__init__()
+        self.features = torch.load(CELEBA_FEATURES)
+
+        # df = pd.read_csv(CELEBA_CSV, delimiter=",")
+        # self.faces_path = df.values[:, 0]
+        # self.landmarks = df.values[:, 1:]
+
+    def __getitem__(self, index):
+        face_dict = {'down1': None,
+                     'down2': self.features[index][1:1024 + 2],
+                     'down4': self.features[index][1026:2050],
+                     'down8': self.features[index][2050:],
+                     'id': self.features[index][0]}
+
+        return face_dict
+
+    def __len__(self):
+        return self.features.shape[0]
+
+
 def get_loader_with_id(args, num_workers=1):
     dataset = CelebADataset()
     dataloader = DataLoader(dataset=dataset,
@@ -86,6 +109,16 @@ def get_loader_with_id(args, num_workers=1):
 
 def get_loader_downsample(args, num_workers=1):
     dataset = CelebADatasetDownsample()
+    dataloader = DataLoader(dataset=dataset,
+                            num_workers=num_workers,
+                            batch_size=args.bs,
+                            shuffle=True,
+                            drop_last=True)
+    return dataloader
+
+
+def get_loader_features(args, num_workers=1):
+    dataset = CelebADatasetsFeatures()
     dataloader = DataLoader(dataset=dataset,
                             num_workers=num_workers,
                             batch_size=args.bs,

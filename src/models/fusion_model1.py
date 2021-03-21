@@ -41,8 +41,7 @@ class FusionModel2(nn.Module):
         )
         self.angle = AngleLinear(output_size, feature_dim)
 
-    def forward(self, feature1, feature2):
-        x = torch.cat([feature1, feature2], dim=1)
+    def forward(self, x):
         feature = self.fc(x)
         if self.val:
             return feature, None
