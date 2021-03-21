@@ -15,3 +15,12 @@ class FusionLoss(nn.Module):
         loss_feature = loss_feature.mean()
         loss = loss_class + loss_feature * self.gamma
         return loss.mean(), loss_class.item(), loss_feature.item()
+
+
+class FusionLoss2(nn.Module):
+    def __init__(self):
+        super(FusionLoss2, self).__init__()
+        self.sphere_loss = SphereLoss()
+
+    def forward(self, classes, target):
+        return self.sphere_loss(classes, target)

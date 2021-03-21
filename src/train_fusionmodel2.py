@@ -11,7 +11,7 @@ from arguments import train_args
 from util import common
 from loaders import celeba_loader
 import lfw_verification as val
-from losses.fusion_loss import FusionLoss
+from losses.fusion_loss import FusionLoss2
 
 
 def save_network(args, net, epoch):
@@ -111,21 +111,19 @@ def main():
     fnet, srnet, lr_fnet = initModels()
     best_acc = 0.0
     epochs = args.epoch
-    criterion = FusionLoss()
+    criterion = FusionLoss2()
     for epoch_id in range(last_epoch + 1, epochs):
         bar = tqdm(dataloader, total=len(dataloader), ncols=0)
         loss = 0.0
-        loss_class = 0.0
-        loss_feature = 0.0
         count = 0
         net.train()
         for batch_id, inputs in enumerate(bar):
             lr = optimizer.param_groups[0]['lr']
             target = inputs['id'].to(args.device)
             for i in range(1, 4):
-                lr_feature = inputs['down{}'.format(2 ** index)].to(args.device)
-                feature, classes = net(lr_feature)
-                lossd, lossd_class, lossd_feature = criterion(classes, target, feature)
+                lr_feature = inputs['down{}'.format(2 ** i)].to(args.device)
+                _, classes = net(lr_feature)
+                lossd, lossd_class, lossd_feature = criterion(classes, target)
                 loss += lossd.item()
                 loss_class += lossd_class
                 loss_feature += lossd_feature
@@ -137,8 +135,6 @@ def main():
             # display
             description = "epoch {} : ".format(epoch_id)
             description += 'loss: {:.4f} '.format(loss / count)
-            description += 'loss_class: {:.4f} '.format(loss_class / count)
-            description += 'loss_feature: {:.4f} '.format(loss_feature / count)
             description += 'lr: {:.3e} '.format(lr)
             bar.set_description(desc=description)
         acc = val.fusion_val(-1, 8, 64, args.device, srnet, fnet, lr_fnet, net)
