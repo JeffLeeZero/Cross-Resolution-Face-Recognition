@@ -214,7 +214,7 @@ def val_raw(fnet_type, size, down_factor, w, h, lfw_bs, device, fnet, srnet=None
 
 def get_fusion_feature(srnet, fnet, lr_fnet, net, lr_face):
     feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, lr_face)
-    feature, _ = net(feature1, feature2)
+    feature, _ = net(torch.cat([feature1, feature2], dim=1))
     return feature
 
 

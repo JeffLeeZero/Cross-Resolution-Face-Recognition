@@ -19,7 +19,7 @@ def initModels():
     fnet.to(args.device)
     common.freeze(fnet)
     srnet = edsr.Edsr()
-    srnet.load_state_dict(torch.load('/content/drive/MyDrive/app/test_raw/backup_epoch11.pth')['net'])
+    srnet.load_state_dict(torch.load('/content/drive/MyDrive/app/test_raw/backup_epoch15.pth')['net'])
     srnet.to(args.device)
     common.freeze(srnet)
     lr_fnet = sface.SphereFace()
@@ -44,6 +44,8 @@ if __name__ == '__main__':
     for batch_id, inputs in enumerate(bar):
         target = inputs['id'].to(args.device)
         data = torch.reshape(target, [-1, 1])
+        hr_face = inputs['down1'].to(args.device)
+        data = torch.cat([data, fnet(hr_face)], dim=1)
         for i in range(1, 4):
             lr_face = inputs['down{}'.format(2 ** i)].to(args.device)
             feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, lr_face)
@@ -53,4 +55,4 @@ if __name__ == '__main__':
             all_data = data.cpu()
         else:
             all_data = torch.cat([all_data, data.cpu()], dim=0)
-    torch.save(all_data, "../../features.pth")
+    torch.save(all_data, "../../celeba_features.pth")

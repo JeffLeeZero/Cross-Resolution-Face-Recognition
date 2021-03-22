@@ -119,14 +119,12 @@ def main():
         net.train()
         for batch_id, inputs in enumerate(bar):
             lr = optimizer.param_groups[0]['lr']
-            target = inputs['id'].to(args.device)
+            target = inputs['id'].to(args.device).to(torch.int64)
             for i in range(1, 4):
                 lr_feature = inputs['down{}'.format(2 ** i)].to(args.device)
                 _, classes = net(lr_feature)
-                lossd, lossd_class, lossd_feature = criterion(classes, target)
+                lossd = criterion(classes, target)
                 loss += lossd.item()
-                loss_class += lossd_class
-                loss_feature += lossd_feature
                 count += 1
                 optimizer.zero_grad()
                 lossd.backward()
