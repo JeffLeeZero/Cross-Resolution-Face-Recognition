@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from models import fusion_model1, sface, edsr
 
 import os
@@ -40,7 +40,7 @@ def common_init(args):
         net = nn.DataParallel(net)
 
     optimizer = optim.Adam(net.parameters(), lr=args.lr, betas=(0.9, 0.999))
-    scheduler = StepLR(optimizer, step_size=args.decay_step, gamma=0.5)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, threshold=0.001, patience=2, min_lr=1e-7)
     last_epoch = -1
     return net, optimizer, last_epoch, scheduler
 
@@ -59,7 +59,7 @@ def backup_init(args):
 
     last_epoch = checkpoint['epoch']  # 设置开始的epoch
 
-    scheduler = StepLR(optimizer, step_size=args.decay_step, gamma=0.5, last_epoch=last_epoch)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, threshold=0.001, patience=2, min_lr=1e-7)
     scheduler.load_state_dict(checkpoint['scheduler'])
     return net, optimizer, last_epoch, scheduler
 
@@ -87,7 +87,7 @@ def initModels():
     fnet.to(args.device)
     common.freeze(fnet)
     srnet = edsr.Edsr()
-    srnet.load_state_dict(torch.load('/content/drive/MyDrive/app/test_raw/backup_epoch11.pth')['net'])
+    srnet.load_state_dict(torch.load('/content/drive/MyDrive/app/test_raw/backup_epoch15.pth')['net'])
     srnet.to(args.device)
     common.freeze(srnet)
     lr_fnet = sface.SphereFace()
@@ -130,21 +130,24 @@ def main():
             feature, classes = net(torch.cat([feature1, feature2], dim=1))
             lossd, lossd_class, lossd_feature = criterion(classes, target, feature, target_feature)
             loss[index] += lossd.item()
+            loss[0] += lossd.item
             loss_class[index] += lossd_class
             loss_feature[index] += lossd_feature
             count[index] += 1
+            count[0] += 1
             optimizer.zero_grad()
             lossd.backward()
             optimizer.step()
-            scheduler.step()  # update learning rate
             # display
             description = "epoch {} : ".format(epoch_id)
+            description += 'total_loss: {:.4f} '.format(loss[0] / count[0])
             description += 'loss: {:.4f} '.format(loss[index] / count[index])
             description += 'loss_class: {:.4f} '.format(loss_class[index] / count[index])
             description += 'loss_feature: {:.4f} '.format(loss_feature[index] / count[index])
             description += 'lr: {:.3e} '.format(lr)
             description += 'index: {:.0f} '.format(index)
             bar.set_description(desc=description)
+        scheduler.step(loss[0])  # update learning rate
         acc = val.fusion_val(-1, 8, 64, args.device, srnet, fnet, lr_fnet, net)
         if acc > best_acc:
             best_acc = acc
