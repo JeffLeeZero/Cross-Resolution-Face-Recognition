@@ -67,11 +67,46 @@ class SphereFace(nn.Module):
         self.val = False
 
     def forward(self, x):
-        #self.feature = self.convs(x)
-        #x = self.fc(self.feature)
+        # self.feature = self.convs(x)
+        # x = self.fc(self.feature)
         x = self.fc(self.convs(x))
         self.feature = x
         if self.fc_angle and not self.val:
+            return self.fc_angle(x)
+        return x
+
+    def getFeature(self):
+        return self.feature
+
+    def setVal(self, val):
+        self.val = val
+
+
+class SphereFaceWithRes(nn.Module):
+    def __init__(self,  feature_dim=10178, pretrain=None):
+        super(SphereFaceWithRes, self).__init__()
+        self.sface = SphereFace()
+        self.sface.setVal(True)
+        if pretrain:
+            self.sface.load_state_dict(pretrain)
+        self.fc_angle = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            AngleLinear(512, feature_dim)
+        )
+        self.fc = nn.Sequential(
+            nn.Linear(in_features=512+2, out_features=512*3),
+            nn.ReLU(),
+            nn.Linear(in_features=512*3, out_features=512)
+        )
+
+        self.feature = []
+        self.val = False
+
+    def forward(self, x):
+        x = self.fc(self.sface(x))
+        self.feature = x
+        if not self.val:
             return self.fc_angle(x)
         return x
 
