@@ -86,9 +86,10 @@ class CelebADatasetsFeatures(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         face_dict = {
-                     'down2': self.features[index][1:1025],
-                     'down4': self.features[index][1025:2049],
-                     'down8': self.features[index][2049:],
+                     'down1': self.features[index][1:513],
+                     'down2': self.features[index][513:1537],
+                     'down4': self.features[index][1537:2561],
+                     'down8': self.features[index][2561:],
                      'id': self.features[index][0]}
 
         return face_dict

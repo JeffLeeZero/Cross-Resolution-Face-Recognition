@@ -34,7 +34,7 @@ def tensor2SFTensor(tensor):
 
 
 def common_init(args):
-    net = fusion_model1.FusionModel2()
+    net = fusion_model1.FusionModel3()
     net.to(args.device)
     if len(args.gpu_ids) > 1:
         net = nn.DataParallel(net)
@@ -48,7 +48,7 @@ def common_init(args):
 def backup_init(args):
     checkpoint = torch.load(args.model_file)  # 加载断点
 
-    net = fusion_model1.FusionModel2()
+    net = fusion_model1.FusionModel3()
     net.load_state_dict(checkpoint['net'])  # 加载模型可学习参数
     net.to(args.device)
     if len(args.gpu_ids) > 1:

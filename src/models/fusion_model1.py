@@ -50,7 +50,38 @@ class FusionModel2(nn.Module):
 
     def setVal(self, val):
         self.val = val
-        
+
+
+class FusionModel3(nn.Module):
+    def __init__(self, input_size=1024, output_size=512, feature_dim=10178):
+        super(FusionModel3, self).__init__()
+        self.val = False
+        self.fc = nn.Sequential(
+            nn.Linear(input_size, 2048),
+            nn.LeakyReLU(),
+            nn.Linear(2048, 2048),
+            nn.LeakyReLU(),
+            nn.Linear(2048, 1024),
+            nn.LeakyReLU(),
+            nn.Linear(1024, 1024),
+            nn.LeakyReLU(),
+            nn.Linear(1024, 512),
+            nn.LeakyReLU(),
+            nn.Linear(512, output_size),
+        )
+        self.angle = AngleLinear(output_size, feature_dim)
+
+    def forward(self, x):
+        feature = self.fc(x)
+        if self.val:
+            return feature, None
+        classes = self.angle(feature)
+        return feature, classes
+
+    def setVal(self, val):
+        self.val = val
+
+
 def getFeatures(srnet, fnet, lr_fnet, lr_face):
     sr_face = srnet(lr_face.clone().detach()).detach()
     # Feature loss
