@@ -1,7 +1,7 @@
 import torch.nn as nn
-from models.sface_celeba import AngleLinear
 import torch
 
+from models.angle_linear import AngleLinear
 from util import common
 
 

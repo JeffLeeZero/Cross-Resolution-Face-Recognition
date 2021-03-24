@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 
-from models.sface_celeba import AngleLinear
+from models.angle_linear import AngleLinear
+from models.se_block import SeBlock
 
 
 def Make_layer(block, num_filters, num_of_layer):
@@ -55,6 +56,8 @@ class SphereFace(nn.Module):
     def __init__(self, type='student', feature_dim=10178, pretrain=None):
         super(SphereFace, self).__init__()
         model = sface()
+        model[0] = nn.ReLU()
+        print(model)
         if pretrain:
             model.load_state_dict(pretrain)
         if type == 'student':
@@ -83,7 +86,7 @@ class SphereFace(nn.Module):
 
 
 class SphereFaceWithRes(nn.Module):
-    def __init__(self,  feature_dim=10178, pretrain=None):
+    def __init__(self, feature_dim=10178, pretrain=None):
         super(SphereFaceWithRes, self).__init__()
         self.sface = SphereFace()
         self.sface.setVal(True)
@@ -95,16 +98,18 @@ class SphereFaceWithRes(nn.Module):
             AngleLinear(512, feature_dim)
         )
         self.fc = nn.Sequential(
-            nn.Linear(in_features=512+2, out_features=512*3),
+            nn.Linear(in_features=512 + 2, out_features=512 * 3),
             nn.ReLU(),
-            nn.Linear(in_features=512*3, out_features=512)
+            nn.Linear(in_features=512 * 3, out_features=512)
         )
 
         self.feature = []
         self.val = False
 
-    def forward(self, x):
-        x = self.fc(self.sface(x))
+    def forward(self, x, w, h):
+        x = self.sface(x)
+        x = torch.cat([x, w, h], dim=1)
+        x = self.fc(x)
         self.feature = x
         if not self.val:
             return self.fc_angle(x)
@@ -115,3 +120,48 @@ class SphereFaceWithRes(nn.Module):
 
     def setVal(self, val):
         self.val = val
+
+
+class SeSface(nn.Module):
+    def __init__(self, pretrain=None, isVal=False, feature_dim=10178):
+        super(SeSface, self).__init__()
+        self.val = isVal
+        self.featrue = None
+        self.sface = sface()
+        if pretrain:
+            self.sface.load_state_dict(pretrain)
+        self.conv1 = self.sface[0:2]
+        print(self.conv1)
+        self.seblock1 = self.__make_seblock__(self.sface[2], 64, 1)
+        self.conv2 = self.sface[3:5]
+        self.seblock2 = self.__make_seblock__(self.sface[5], 128, 2)
+        self.conv3 = self.sface[6:8]
+        self.seblock3 = self.__make_seblock__(self.sface[8], 256, 4)
+        self.conv4 = self.sface[9:11]
+        self.seblock4 = self.__make_seblock__(self.sface[11], 512, 1)
+        self.fc = self.sface[12:]
+        self.angle_fc = AngleLinear(512, feature_dim)
+        self.sface = None
+
+    def forward(self, x, down_factor):
+        x, _ = self.seblock1(self.conv1(x), down_factor)
+        x, _ = self.seblock2(self.conv2(x), down_factor)
+        x, _ = self.seblock3(self.conv3(x), down_factor)
+        x, _ = self.seblock4(self.conv4(x), down_factor)
+        self.featrue = self.fc(x)
+        if self.val:
+            return self.featrue
+        return self.angle_fc(self.featrue)
+
+    def get_feature(self):
+        return self.featrue
+
+    def set_val(self, val):
+        self.val = val
+
+    def __make_seblock__(self, resblocks, channel, num):
+        for i in range(0, num):
+            seblock = SeBlock(channel, 8)
+            seblock.load_weight(resblocks[i])
+            resblocks[i] = seblock
+        return resblocks
