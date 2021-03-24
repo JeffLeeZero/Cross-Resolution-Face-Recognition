@@ -167,7 +167,8 @@ def val_sesface(size, w, h, lfw_bs, device, fnet, net, step=None, index=1):
             img2, img2_flip = tensor_norm(img2), tensor_norm(img2_flip)
             features11 = fnet(img1)
             features12 = fnet(img1_flip)
-            down_factor = torch.ones(size=(args.bs, 1, 1, 1)) / index
+            down_factor = torch.ones(size=(args.bs, 2, 1, 1)) *[index / 8.0, 1 / index]
+            down_factor.to(args.device)
             features21 = net(img2, down_factor)
             features22 = net(img2_flip, down_factor)
             features11_total += [features11]

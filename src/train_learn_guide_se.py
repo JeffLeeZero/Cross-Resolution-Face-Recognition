@@ -107,7 +107,8 @@ def main():
             hr_face = inputs['down1'].to(args.device)
             target = inputs['id'].to(args.device)
             lr_face = nn.functional.interpolate(lr_face, size=(112, 96), mode='bilinear', align_corners=False)
-            down_factor = torch.ones(size=(args.bs, 1, 1, 1)) / (2**index)
+            down_factor = torch.ones(size=(args.bs, 2, 1, 1)) *[(2**index) / 8.0, 1 / (2**index)]
+            down_factor.to(args.device)
             lr_classes = net(tensor2SFTensor(lr_face), down_factor)
             fnet(tensor2SFTensor(hr_face))
             lossd, lossd_class, lossd_feature = criterion(lr_classes, target, net.getFeature(), fnet.getFeature())

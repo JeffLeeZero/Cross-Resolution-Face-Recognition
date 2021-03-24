@@ -12,13 +12,11 @@ class SeBlock(nn.Module):
             nn.Conv2d(channels, channels, kernel_size=3, padding=1),
             nn.PReLU(channels)
         )
-        self.seblock1 = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Conv2d(channels, channels // r, kernel_size=1),
-            nn.ReLU(inplace=True)
-        )
-        self.seblock2 = nn.Sequential(
-            nn.Conv2d(channels // r + 1, channels, kernel_size=1),
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.seblock = nn.Sequential(
+            nn.Conv2d(channels + 2, channels // r, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channels // r , channels, kernel_size=1),
             nn.Sigmoid()
         )
 
@@ -28,4 +26,4 @@ class SeBlock(nn.Module):
     def forward(self, x, down_factor):
         res_output = self.resblock(x)
 
-        return x + res_output * (self.seblock2(torch.cat([self.seblock1(res_output), down_factor], dim=1))), down_factor
+        return x + res_output * self.seblock(torch.cat([self.pool(res_output), down_factor], dim=1))
