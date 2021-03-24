@@ -23,7 +23,7 @@ class SeBlock(nn.Module):
     def load_weight(self, resblock):
         self.resblock = resblock.resblock
 
-    def forward(self, x, down_factor):
+    def forward(self, inputs):
+        x, down_factor = inputs
         res_output = self.resblock(x)
-
-        return x + res_output * self.seblock(torch.cat([self.pool(res_output), down_factor], dim=1))
+        return x + res_output * self.seblock(torch.cat([self.pool(res_output), down_factor], dim=1)), down_factor

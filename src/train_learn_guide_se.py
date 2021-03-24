@@ -107,8 +107,9 @@ def main():
             hr_face = inputs['down1'].to(args.device)
             target = inputs['id'].to(args.device)
             lr_face = nn.functional.interpolate(lr_face, size=(112, 96), mode='bilinear', align_corners=False)
-            down_factor = torch.ones(size=(args.bs, 2, 1, 1)) *[(2**index) / 8.0, 1 / (2**index)]
-            down_factor.to(args.device)
+            down_factor = torch.ones(size=(args.bs, 2, 1, 1)).to(args.device)
+            down_factor[:][0] *= (2 ** index) / 8.0
+            down_factor[:][1] *= 1 / (2 ** index)
             lr_classes = net(tensor2SFTensor(lr_face), down_factor)
             fnet(tensor2SFTensor(hr_face))
             lossd, lossd_class, lossd_feature = criterion(lr_classes, target, net.getFeature(), fnet.getFeature())
@@ -130,7 +131,7 @@ def main():
             bar.set_description(desc=description)
 
         net.setVal(True)
-        acc = val.val_sesface(-1, 96, 112, 32, args.device,fnet, net, index=7)
+        acc = val.val_sesface(-1, 96, 112, 32, args.device, fnet, net, index=7)
         net.setVal(False)
         if acc > best_acc:
             best_acc = acc
@@ -154,8 +155,6 @@ def eval():
     acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=6)
     acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=4)
     acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=1)
-
-
 
 
 args = train_args.get_args()

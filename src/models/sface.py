@@ -56,8 +56,6 @@ class SphereFace(nn.Module):
     def __init__(self, type='student', feature_dim=10178, pretrain=None):
         super(SphereFace, self).__init__()
         model = sface()
-        model[0] = nn.ReLU()
-        print(model)
         if pretrain:
             model.load_state_dict(pretrain)
         if type == 'student':
@@ -131,7 +129,6 @@ class SeSface(nn.Module):
         if pretrain:
             self.sface.load_state_dict(pretrain)
         self.conv1 = self.sface[0:2]
-        print(self.conv1)
         self.seblock1 = self.__make_seblock__(self.sface[2], 64, 1)
         self.conv2 = self.sface[3:5]
         self.seblock2 = self.__make_seblock__(self.sface[5], 128, 2)
@@ -142,12 +139,13 @@ class SeSface(nn.Module):
         self.fc = self.sface[12:]
         self.angle_fc = AngleLinear(512, feature_dim)
         self.sface = None
+        self.test = SeBlock(64, 8)
 
     def forward(self, x, down_factor):
-        x, _ = self.seblock1(self.conv1(x), down_factor)
-        x, _ = self.seblock2(self.conv2(x), down_factor)
-        x, _ = self.seblock3(self.conv3(x), down_factor)
-        x, _ = self.seblock4(self.conv4(x), down_factor)
+        x, _ = self.seblock1((self.conv1(x), down_factor))
+        x, _ = self.seblock2((self.conv2(x), down_factor))
+        x, _ = self.seblock3((self.conv3(x), down_factor))
+        x, _ = self.seblock4((self.conv4(x), down_factor))
         self.featrue = self.fc(x)
         if self.val:
             return self.featrue
@@ -160,8 +158,9 @@ class SeSface(nn.Module):
         self.val = val
 
     def __make_seblock__(self, resblocks, channel, num):
+        seblocks = []
         for i in range(0, num):
             seblock = SeBlock(channel, 8)
             seblock.load_weight(resblocks[i])
-            resblocks[i] = seblock
-        return resblocks
+            seblocks.append(seblock)
+        return nn.Sequential(*seblocks)
