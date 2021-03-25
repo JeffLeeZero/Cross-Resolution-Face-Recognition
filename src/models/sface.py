@@ -151,10 +151,10 @@ class SeSface(nn.Module):
             return self.featrue
         return self.angle_fc(self.featrue)
 
-    def get_feature(self):
+    def getFeature(self):
         return self.featrue
 
-    def set_val(self, val):
+    def setVal(self, val):
         self.val = val
 
     def __make_seblock__(self, resblocks, channel, num):

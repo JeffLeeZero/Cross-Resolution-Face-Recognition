@@ -156,7 +156,7 @@ def val_sesface(size, w, h, lfw_bs, device, fnet, net, step=None, index=1):
     labels = []
     with torch.no_grad():
         bs_total = 0
-        for index, (img1, img2, img1_flip, img2_flip, targets) in enumerate(tqdm(dataloader, ncols=0)):
+        for i, (img1, img2, img1_flip, img2_flip, targets) in enumerate(tqdm(dataloader, ncols=0)):
             bs = len(targets)
             img1, img1_flip = img1.to(device), img1_flip.to(device)
             img2, img2_flip = img2.to(device), img2_flip.to(device)
@@ -167,7 +167,7 @@ def val_sesface(size, w, h, lfw_bs, device, fnet, net, step=None, index=1):
             img2, img2_flip = tensor_norm(img2), tensor_norm(img2_flip)
             features11 = fnet(img1)
             features12 = fnet(img1_flip)
-            down_factor = torch.ones(size=(args.bs, 2, 1, 1)).to(args.device)
+            down_factor = torch.ones(size=(lfw_bs, 2, 1, 1)).to('cuda:0')
             down_factor[:][0] *= index / 8.0
             down_factor[:][1] *= 1 / index
             features21 = net(img2, down_factor)
