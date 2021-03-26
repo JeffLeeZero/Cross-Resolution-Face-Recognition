@@ -160,7 +160,7 @@ class SeSface(nn.Module):
     def __make_seblock__(self, resblocks, channel, num):
         seblocks = []
         for i in range(0, num):
-            seblock = SeBlock(channel, 8)
+            seblock = SeBlock(channel, 4)
             seblock.load_weight(resblocks[i])
             seblocks.append(seblock)
         return nn.Sequential(*seblocks)

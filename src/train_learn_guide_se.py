@@ -132,6 +132,7 @@ def main():
 
         net.setVal(True)
         acc = val.val_sesface(-1, 96, 112, 32, args.device, fnet, net, index=7)
+        acc += val.val_sesface(-1, 96, 112, 32, args.device, net, net, index=7)
         net.setVal(False)
         if acc > best_acc:
             best_acc = acc

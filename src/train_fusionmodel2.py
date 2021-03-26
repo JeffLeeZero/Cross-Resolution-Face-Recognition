@@ -87,7 +87,7 @@ def initModels():
     fnet.to(args.device)
     common.freeze(fnet)
     srnet = edsr.Edsr()
-    srnet.load_state_dict(torch.load('/content/drive/MyDrive/app/test_raw/backup_epoch14.pth')['net'])
+    srnet.load_state_dict(torch.load('/content/drive/MyDrive/app/test_raw/backup_epoch15.pth')['net'])
     srnet.to(args.device)
     common.freeze(srnet)
     lr_fnet = sface.SphereFace()
