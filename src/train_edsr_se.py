@@ -87,7 +87,7 @@ def train():
     ## Setup FNet
     fnet = sface.sface()
 
-    fnet.load_state_dict(torch.load('../pretrained/sface.pth'))
+    fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
     common.freeze(fnet)
     fnet.to(args.device)
 
