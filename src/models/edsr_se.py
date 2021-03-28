@@ -1,6 +1,7 @@
 import math
 from torch import nn
 import torch
+from models.edsr import Edsr as raw_sr
 
 
 class Edsr(nn.Module):
@@ -10,7 +11,7 @@ class Edsr(nn.Module):
 		and we DO use "tanh" to ensure the output pixels are [-1, 1].
 	"""
 
-    def __init__(self, scale_factor=4, num_resblocks=32, num_filters=256):
+    def __init__(self, scale_factor=4, num_resblocks=32, num_filters=256, raw_sr=None):
         """
 			Refer to EDSR paper's Figure 3.
 		"""
@@ -23,7 +24,7 @@ class Edsr(nn.Module):
         # Conv1
         self.conv1 = nn.Conv2d(3, self.num_filters, kernel_size=3, padding=1)
         # ResBlock
-        self.res_blocks = self.Make_ResBlocks(num_resblocks)
+        self.res_blocks = self.Make_ResBlocks(num_resblocks, raw_sr)
         # Conv2
         self.conv2 = nn.Conv2d(self.num_filters, self.num_filters, kernel_size=3, padding=1)
         # Upsample
@@ -38,10 +39,15 @@ class Edsr(nn.Module):
         out = self.conv3(self.upsampler(res))
         return torch.tanh(out)  # ensure -1<=out<=1
 
-    def Make_ResBlocks(self, num_of_layer):
+    def Make_ResBlocks(self, num_of_layer, raw_sr=None):
         layers = []
-        for _ in range(num_of_layer):
-            layers += [ResBlock(self.num_filters, self.residual_scale, 4, self.isBN)]
+        if raw_sr:
+            raw_blocks = raw_sr.res_blocks
+            for i in range(num_of_layer):
+                layers += [ResBlock(self.num_filters, self.residual_scale, 4, self.isBN, raw_blocks[i])]
+        else:
+            for i in range(num_of_layer):
+                layers += [ResBlock(self.num_filters, self.residual_scale, 4, self.isBN)]
         return nn.Sequential(*layers)
 
     def Make_Upsampler(self):
@@ -53,11 +59,13 @@ class Edsr(nn.Module):
 
 
 class ResBlock(nn.Module):
-    def __init__(self, channels, res_scale, r, isBN=False):
+    def __init__(self, channels, res_scale, r, isBN=False, raw_block=None):
         super(ResBlock, self).__init__()
 
         self.res_scale = res_scale
-        if isBN:
+        if raw_block:
+            self.residual = raw_block.residual
+        elif isBN:
             self.residual = nn.Sequential(
                 nn.Conv2d(channels, channels, kernel_size=3, padding=1),
                 nn.BatchNorm2d(channels),

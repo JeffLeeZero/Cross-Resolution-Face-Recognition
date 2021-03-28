@@ -34,7 +34,12 @@ def tensor2SFTensor(tensor):
 
 
 def common_init(args):
-    net = SeSface(pretrain=torch.load('../../pretrained/sface.pth'))
+    if args.type == 'finetune':
+        raw_net = SphereFace()
+        raw_net.load_state_dict(torch.load(args.model_file))
+        net = SeSface(raw_net=raw_net.getSface())
+    else:
+        net = SeSface(pretrain=torch.load('../../pretrained/sface.pth'))
     net.to(args.device)
     if len(args.gpu_ids) > 1:
         net = nn.DataParallel(net)
@@ -160,7 +165,7 @@ def eval():
 
 args = train_args.get_args()
 if __name__ == '__main__':
-    if args.type == 'train':
+    if args.type == 'train' or args.type == 'finetune':
         main()
     else:
         eval()

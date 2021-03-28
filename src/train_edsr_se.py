@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from arguments import train_args
 from loaders import celeba_loader
-from models import sface, edsr_se
+from models import sface, edsr_se, edsr
 from util import common
 import numpy as np
 import lfw_verification as val
@@ -31,7 +31,12 @@ def save_network(args, net, which_step):
 
 def common_init(args):
     ## Setup SRNet
-    srnet = edsr_se.Edsr()
+    if args.type == 'finetune':
+        raw_net = edsr.Edsr()
+        raw_net.load_state_dict(torch.load(args.model_file))
+        srnet = edsr_se.Edsr(raw_sr=raw_net)
+    else:
+        srnet = edsr_se.Edsr()
     srnet.to(args.device)
     if len(args.gpu_ids) > 1:
         srnet = nn.DataParallel(srnet)
@@ -177,7 +182,7 @@ def eval():
 
 args = train_args.get_args()
 if __name__ == '__main__':
-    if args.type == 'train':
+    if args.type == 'train' or args.type == 'finetune':
         train()
     else:
         eval()

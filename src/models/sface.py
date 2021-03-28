@@ -82,6 +82,14 @@ class SphereFace(nn.Module):
     def setVal(self, val):
         self.val = val
 
+    def getSface(self):
+        length = len(self.convs)+ len(self.fc)
+        list = []
+        for i in range(len(self.convs)):
+            list.append(self.convs[i])
+        for i in range(len(self.fc)):
+            list.append(self.fc[i])
+        return nn.Sequential(*list)
 
 class SphereFaceWithRes(nn.Module):
     def __init__(self, feature_dim=10178, pretrain=None):
@@ -121,13 +129,15 @@ class SphereFaceWithRes(nn.Module):
 
 
 class SeSface(nn.Module):
-    def __init__(self, pretrain=None, isVal=False, feature_dim=10178):
+    def __init__(self, pretrain=None, isVal=False, feature_dim=10178, raw_net=None):
         super(SeSface, self).__init__()
         self.val = isVal
         self.featrue = None
         self.sface = sface()
         if pretrain:
             self.sface.load_state_dict(pretrain)
+        if sface:
+            self.sface = raw_net
         self.conv1 = self.sface[0:2]
         self.seblock1 = self.__make_seblock__(self.sface[2], 64, 1)
         self.conv2 = self.sface[3:5]
