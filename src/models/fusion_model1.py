@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 
 from models.angle_linear import AngleLinear
+from losses.arcface import ArcFace
 from util import common
 
 
@@ -32,21 +33,22 @@ class FusionModel2(nn.Module):
     def __init__(self, input_size=1024, output_size=512, feature_dim=10178):
         super(FusionModel2, self).__init__()
         self.val = False
-        self.fc = nn.Sequential(
+        self.fc1 = nn.Sequential(
             nn.Linear(input_size, 512 * 3),
-            nn.ReLU(),
-            nn.Linear(512 * 3, 512 * 3),
-            nn.ReLU(),
+            nn.PReLU(512*3),
             nn.Linear(512 * 3, output_size),
         )
-        self.angle = AngleLinear(output_size, feature_dim)
+        self.fc2 = nn.Sequential(
+            nn.Linear(output_size, output_size),
+            nn.Dropout(0.5)
+        )
+        self.arcface = ArcFace(output_size, feature_dim)
 
     def forward(self, x):
-        feature = self.fc(x)
+        feature = self.fc1(x)
         if self.val:
-            return feature, None
-        classes = self.angle(feature)
-        return feature, classes
+            return self.fc2(feature)
+        return feature, self.arcface(self.fc2(feature))
 
     def setVal(self, val):
         self.val = val

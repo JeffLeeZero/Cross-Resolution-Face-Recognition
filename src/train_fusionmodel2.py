@@ -12,6 +12,7 @@ from util import common
 from loaders import celeba_loader
 import lfw_verification as val
 from losses.fusion_loss import FusionLoss3
+import torch.functional as F
 
 
 def save_network(args, net, epoch):
@@ -117,7 +118,6 @@ def main():
         loss = 0.0
         loss_class = 0.0
         loss_feature = 0.0
-        loss_cos = 0.0
         count = 0
         net.train()
         for batch_id, inputs in enumerate(bar):
@@ -126,12 +126,12 @@ def main():
             target_feature = inputs['down1'].to(args.device)
             for i in range(1, 4):
                 lr_feature = inputs['down{}'.format(2 ** i)].to(args.device)
-                feature, classes = net(lr_feature)
-                lossd, lossd_class, lossd_feature, lossd_cos = criterion(classes, target, feature, target_feature)
+                feature, lossd_class = net(lr_feature)
+                lossd_feature = F.pairwise_distance(feature, target_feature, p=2).mean()
+                lossd = lossd_class + 0.5 * lossd_feature
                 loss += lossd.item()
-                loss_class += lossd_class
-                loss_feature += lossd_feature
-                loss_cos += lossd_cos
+                loss_class += lossd_class.item()
+                loss_feature += lossd_feature.item()
                 count += 1
                 optimizer.zero_grad()
                 lossd.backward()
@@ -141,7 +141,6 @@ def main():
             description += 'loss: {:.4f} '.format(loss / count)
             description += 'loss_class: {:.4f} '.format(loss_class / count)
             description += 'loss_feature: {:.4f} '.format(loss_feature / count)
-            description += 'loss_cos: {:.4f} '.format(loss_cos / count)
             description += 'lr: {:.3e} '.format(lr)
             bar.set_description(desc=description)
         scheduler.step(loss / count)  # update learning rate

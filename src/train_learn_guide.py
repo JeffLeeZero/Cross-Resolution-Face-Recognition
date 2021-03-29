@@ -141,7 +141,6 @@ def main():
 
 def eval():
     net = sface.SphereFace()
-    print(net)
     fnet = sface.SphereFace(type='teacher', pretrain=torch.load('../../pretrained/sface.pth'))
     fnet.to(args.device)
     checkpoint = torch.load(args.model_file)

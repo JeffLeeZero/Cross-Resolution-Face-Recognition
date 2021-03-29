@@ -136,7 +136,7 @@ class SeSface(nn.Module):
         self.sface = sface()
         if pretrain:
             self.sface.load_state_dict(pretrain)
-        if sface:
+        if raw_net:
             self.sface = raw_net
         self.conv1 = self.sface[0:2]
         self.seblock1 = self.__make_seblock__(self.sface[2], 64, 1)

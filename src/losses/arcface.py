@@ -63,4 +63,4 @@ class ArcFace(nn.Module):
         output *= self.s
         # print(output)
 
-        return output
+        return output.mean()
