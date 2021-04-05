@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from models.angle_linear import AngleLinear
 from models.se_block import SeBlock
-
+from losses.arcface import ArcFace
 
 def Make_layer(block, num_filters, num_of_layer):
     layers = []
@@ -59,7 +59,7 @@ class SphereFace(nn.Module):
         if pretrain:
             model.load_state_dict(pretrain)
         if type == 'student':
-            self.fc_angle = AngleLinear(512, feature_dim)
+            self.fc_angle = ArcFace(512, feature_dim)
         else:
             self.fc_angle = None
         self.convs = nn.Sequential(*list(model.children())[:-1])

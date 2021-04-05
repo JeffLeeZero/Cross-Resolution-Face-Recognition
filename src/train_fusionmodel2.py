@@ -12,7 +12,7 @@ from util import common
 from loaders import celeba_loader
 import lfw_verification as val
 from losses.fusion_loss import FusionLoss3
-import torch.functional as F
+import torch.nn.functional as F
 
 
 def save_network(args, net, epoch):
@@ -126,7 +126,7 @@ def main():
             target_feature = inputs['down1'].to(args.device)
             for i in range(1, 4):
                 lr_feature = inputs['down{}'.format(2 ** i)].to(args.device)
-                feature, lossd_class = net(lr_feature)
+                feature, lossd_class = net(lr_feature, target)
                 lossd_feature = F.pairwise_distance(feature, target_feature, p=2).mean()
                 lossd = lossd_class + 0.5 * lossd_feature
                 loss += lossd.item()

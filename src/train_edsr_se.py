@@ -170,13 +170,13 @@ def eval():
     fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
     fnet.to(args.device)
     srnet = edsr_se.Edsr()
-    srnet.load_state_dict(torch.load(args.model_file))
+    srnet.load_state_dict(torch.load(args.model_file)['net'])
     srnet.to(args.device)
 
-    val.val_raw_se("sface", -1, 16, 96, 112, 32, args.device, fnet, srnet)
-    val.val_raw_se("sface", -1, 12, 96, 112, 32, args.device, fnet, srnet)
     val.val_raw_se("sface", -1, 8, 96, 112, 32, args.device, fnet, srnet)
+    val.val_raw_se("sface", -1, 7, 96, 112, 32, args.device, fnet, srnet)
     val.val_raw_se("sface", -1, 6, 96, 112, 32, args.device, fnet, srnet)
+    val.val_raw_se("sface", -1, 4, 96, 112, 32, args.device, fnet, srnet)
     val.val_raw_se("sface", -1, 4, 96, 112, 32, args.device, fnet, srnet)
 
 

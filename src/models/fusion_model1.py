@@ -44,11 +44,11 @@ class FusionModel2(nn.Module):
         )
         self.arcface = ArcFace(output_size, feature_dim)
 
-    def forward(self, x):
+    def forward(self, x, target):
         feature = self.fc1(x)
         if self.val:
             return self.fc2(feature)
-        return feature, self.arcface(self.fc2(feature))
+        return feature, self.arcface(self.fc2(feature), target)
 
     def setVal(self, val):
         self.val = val

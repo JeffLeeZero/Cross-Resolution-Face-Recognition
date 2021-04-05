@@ -3,7 +3,7 @@ import math
 import torch.nn as nn
 import torch
 from torch.nn import Parameter
-import torch.functional as F
+import torch.nn.functional as F
 
 class ArcFace(nn.Module):
     r"""Implement of large margin arc distance: :
