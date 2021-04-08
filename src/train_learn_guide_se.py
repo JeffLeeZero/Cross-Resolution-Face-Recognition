@@ -115,7 +115,7 @@ def main():
             down_factor = torch.ones(size=(args.bs, 2, 1, 1)).to(args.device)
             down_factor[:][0] *= (2 ** index) / 8.0
             down_factor[:][1] *= 1 / (2 ** index)
-            lr_classes = net(tensor2SFTensor(lr_face), down_factor)
+            lr_classes = net(tensor2SFTensor(lr_face), down_factor, target)
             fnet(tensor2SFTensor(hr_face))
             lossd, lossd_class, lossd_feature = criterion(lr_classes, target, net.getFeature(), fnet.getFeature())
             loss[index] += lossd.item()
@@ -137,7 +137,6 @@ def main():
 
         net.setVal(True)
         acc = val.val_sesface(-1, 96, 112, 32, args.device, fnet, net, index=7)
-        acc += val.val_sesface(-1, 96, 112, 32, args.device, net, net, index=7)
         net.setVal(False)
         if acc > best_acc:
             best_acc = acc

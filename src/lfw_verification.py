@@ -146,7 +146,7 @@ def val_sphereface(size, w, h, lfw_bs, device, fnet, net, step=None, index=1):
     return mean_acc
 
 
-def val_sesface(size, w, h, lfw_bs, device, fnet, net, step=None, index=1):
+def val_sesface(size, w, h, lfw_bs, device, net, step=None, index=1):
     net.eval()
     fnet.eval()
     tensor_norm = tensor_sface_norm

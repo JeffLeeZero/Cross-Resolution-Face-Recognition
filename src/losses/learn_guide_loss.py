@@ -1,6 +1,5 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from losses.sphere_loss import SphereLoss
 
 class LearnGuideLoss(nn.Module):
     def __init__(self):
