@@ -67,13 +67,13 @@ class SphereFace(nn.Module):
         self.feature = []
         self.val = False
 
-    def forward(self, x):
+    def forward(self, x, target=None):
         # self.feature = self.convs(x)
         # x = self.fc(self.feature)
         x = self.fc(self.convs(x))
         self.feature = x
         if self.fc_angle and not self.val:
-            return self.fc_angle(x)
+            return self.fc_angle(x, target)
         return x
 
     def getFeature(self):

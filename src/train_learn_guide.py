@@ -108,7 +108,7 @@ def main():
             target = inputs['id'].to(args.device)
             lr_face = nn.functional.interpolate(lr_face, size=(112, 96), mode='bilinear', align_corners=False)
 
-            lr_classes = net(tensor2SFTensor(lr_face))
+            lr_classes = net(tensor2SFTensor(lr_face), target)
             fnet(tensor2SFTensor(hr_face))
             lossd, lossd_class, lossd_feature = criterion(lr_classes, target, net.getFeature(), fnet.getFeature())
             loss[index] += lossd.item()
