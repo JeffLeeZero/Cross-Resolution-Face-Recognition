@@ -55,6 +55,8 @@ class CelebADatasetDownsample(torch.utils.data.Dataset):
         img = cv2.imread(CELEBA_ROOT + path)
         face = common.alignment(img, self.landmarks[index].reshape(-1, 2))
 
+        cv2.imshow(face)
+        cv2.waitKey(0)
         if random.random() > 0.5:
             face = cv2.flip(face, 1)
         face_down2 = cv2.resize(face, None, fx=1 / 2, fy=1 / 2, interpolation=cv2.INTER_CUBIC)

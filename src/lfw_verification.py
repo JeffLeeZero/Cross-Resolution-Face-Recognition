@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from models import sface, net_resolution
+from models import sface
 
 import os
 import numpy as np

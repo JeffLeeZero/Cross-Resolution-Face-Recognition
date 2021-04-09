@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
-from models import net_resolution, sface, edsr
+from models import sface, edsr
 
 import os
 import numpy as np
