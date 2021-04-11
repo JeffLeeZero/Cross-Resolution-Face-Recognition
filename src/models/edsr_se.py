@@ -177,7 +177,7 @@ class ResBlock2(nn.Module):
 
         self.pre = nn.AdaptiveAvgPool2d((1,1))
         self.seblock = nn.Sequential(
-            nn.Conv2d(channels // r + 2, channels // r, kernel_size=1),
+            nn.Conv2d(channels + 2, channels // r, kernel_size=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(channels // r , channels, kernel_size=1),
             nn.Sigmoid()

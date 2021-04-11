@@ -7,7 +7,7 @@ import pandas as pd
 import random
 
 CELEBA_ROOT = '../../img_align_celeba/'
-CELEBA_CSV = '../data/celeba_clean_landmarks.csv'
+CELEBA_CSV = '../data/celeba_landmarks.csv'
 CELEBA_ID = '../data/identity_CelebA.txt'
 CELEBA_FEATURES = '../../Datasets/celeba_features.pth'
 
@@ -54,9 +54,6 @@ class CelebADatasetDownsample(torch.utils.data.Dataset):
         path = self.faces_path[index]
         img = cv2.imread(CELEBA_ROOT + path)
         face = common.alignment(img, self.landmarks[index].reshape(-1, 2))
-
-        cv2.imshow(face)
-        cv2.waitKey(0)
         if random.random() > 0.5:
             face = cv2.flip(face, 1)
         face_down2 = cv2.resize(face, None, fx=1 / 2, fy=1 / 2, interpolation=cv2.INTER_CUBIC)
