@@ -59,7 +59,7 @@ class SphereFace(nn.Module):
         if pretrain:
             model.load_state_dict(pretrain)
         if type == 'student':
-            self.fc_angle = ArcFace(512, feature_dim)
+            self.fc_angle = nn.Linear(512, feature_dim)#ArcFace(512, feature_dim)
         else:
             self.fc_angle = None
         self.convs = nn.Sequential(*list(model.children())[:-1])
@@ -111,7 +111,7 @@ class SeSface(nn.Module):
         self.conv4 = self.sface[9:11]
         self.seblock4 = self.__make_seblock__(self.sface[11], 512, 1)
         self.fc = self.sface[12:]
-        self.arc_fc = ArcFace(512, feature_dim)
+        self.arc_fc = nn.Linear(512, feature_dim)#ArcFace(512, feature_dim)
         self.sface = None
 
     def forward(self, x, down_factor, target=None):

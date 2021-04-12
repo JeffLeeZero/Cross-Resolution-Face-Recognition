@@ -13,6 +13,7 @@ import numpy as np
 import lfw_verification as val
 import os
 
+from torchsummary import summary
 
 def save_network(args, net, which_step):
     save_filename = 'edsr_lambda{}_step{}.pth'.format(args.lamb_id, which_step)
@@ -100,7 +101,6 @@ def train():
         srnet, optimizer, last_epoch, scheduler = backup_init(args)
     else:
         srnet, optimizer, last_epoch, scheduler = common_init(args)
-
     criterion_pixel = nn.L1Loss()
 
     epochs = args.epoch

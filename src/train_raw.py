@@ -13,6 +13,8 @@ import numpy as np
 import lfw_verification as val
 import os
 
+from torchsummary import summary
+
 
 def save_network(args, net, which_step):
     save_filename = 'edsr_lambda{}_step{}.pth'.format(args.lamb_id, which_step)
@@ -87,7 +89,7 @@ def train():
     ## Setup FNet
     fnet = sface.sface()
 
-    fnet.load_state_dict(torch.load('../pretrained/sface.pth'))
+    fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
     common.freeze(fnet)
     fnet.to(args.device)
 
@@ -95,7 +97,7 @@ def train():
         srnet, optimizer, last_epoch, scheduler = backup_init(args)
     else:
         srnet, optimizer, last_epoch, scheduler = common_init(args)
-
+    summary(fnet, (3,96,112))
     criterion_pixel = nn.L1Loss()
 
     losses = ['loss', 'loss_pixel', 'loss_feature', 'lr', 'index']
