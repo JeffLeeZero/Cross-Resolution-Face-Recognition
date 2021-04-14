@@ -73,7 +73,7 @@ class SphereFace(nn.Module):
         x = self.fc(self.convs(x))
         self.feature = x
         if self.fc_angle and not self.val:
-            return self.fc_angle(x, target)
+            return self.fc_angle(x)
         return x
 
     def getFeature(self):
@@ -122,7 +122,7 @@ class SeSface(nn.Module):
         self.featrue = self.fc(x)
         if self.val:
             return self.featrue
-        return self.arc_fc(self.featrue, target)
+        return self.arc_fc(self.featrue)
 
     def getFeature(self):
         return self.featrue

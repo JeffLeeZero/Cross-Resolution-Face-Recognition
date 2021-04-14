@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from models import fusion_model1, sface, edsr
+from models import fusion_model1, sface, edsr_se
 
 import os
 import numpy as np
@@ -87,13 +87,13 @@ def initModels():
     fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
     fnet.to(args.device)
     common.freeze(fnet)
-    srnet = edsr.Edsr()
-    srnet.load_state_dict(torch.load('/content/drive/MyDrive/app/test_raw/backup_epoch15.pth')['net'])
+    srnet = edsr_se.Edsr()
+    srnet.load_state_dict(torch.load('/content/drive/MyDrive/app/edsrse_100_4_13/backup.pth')['net'])
     srnet.to(args.device)
     common.freeze(srnet)
-    lr_fnet = sface.SphereFace()
+    lr_fnet = sface.SeSface()
     lr_fnet.load_state_dict(
-    torch.load('/content/drive/MyDrive/app/3_13_learn_guide_train/learn_guide_backup_epoch18.pth')['net'])
+    torch.load('/content/drive/MyDrive/app2/sesface_4_13/sesface_backup_epoch13.pth')['net'])
     lr_fnet.to(args.device)
     lr_fnet.setVal(True)
     common.freeze(lr_fnet)
@@ -124,14 +124,13 @@ def main():
             lr = optimizer.param_groups[0]['lr']
             target = inputs['id'].to(args.device).to(torch.int64)
             target_feature = inputs['down1'].to(args.device)
-            for i in range(1, 4):
+            for i in range(2, 5):
                 lr_feature = inputs['down{}'.format(2 ** i)].to(args.device)
-                feature, lossd_class = net(lr_feature, target)
-                lossd_feature = F.pairwise_distance(feature, target_feature, p=2).mean()
-                lossd = lossd_class + 0.5 * lossd_feature
+                feature, classes = net(lr_feature, target)
+                lossd, lossd_class, lossd_feature = criterion(classes, target, feature, target_feature)
                 loss += lossd.item()
-                loss_class += lossd_class.item()
-                loss_feature += lossd_feature.item()
+                loss_class += lossd_class
+                loss_feature += lossd_feature
                 count += 1
                 optimizer.zero_grad()
                 lossd.backward()

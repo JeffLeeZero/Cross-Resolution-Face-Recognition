@@ -44,7 +44,7 @@ class FusionModel2(nn.Module):
         )
         self.arcface = ArcFace(output_size, feature_dim)
 
-    def forward(self, x, target):
+    def forward(self, x, target=None):
         feature = self.fc1(x)
         if self.val:
             return self.fc2(feature)
@@ -84,12 +84,12 @@ class FusionModel3(nn.Module):
         self.val = val
 
 
-def getFeatures(srnet, fnet, lr_fnet, lr_face):
-    sr_face = srnet(lr_face.clone().detach()).detach()
+def getFeatures(srnet, fnet, lr_fnet, lr_face, factor):
+    sr_face = srnet(lr_face.clone().detach(), factor.detach()).detach()
     # Feature loss
     sr_face_up = nn.functional.interpolate(sr_face, size=(112, 96), mode='bilinear', align_corners=False)
     feature1 = fnet(common.tensor2SFTensor(sr_face_up)).detach()
     lr_face = nn.functional.interpolate(lr_face, size=(112, 96), mode='bilinear', align_corners=False)
     lr_face = common.tensor2SFTensor(lr_face)
-    feature2 = lr_fnet(lr_face).detach()
+    feature2 = lr_fnet(lr_face, factor.detach()).detach()
     return feature1, feature2

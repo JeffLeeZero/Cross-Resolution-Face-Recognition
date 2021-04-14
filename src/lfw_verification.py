@@ -422,9 +422,9 @@ def val_raw_se(fnet_type, size, down_factor, w, h, lfw_bs, device, fnet, srnet=N
     return mean_acc
 
 
-def get_fusion_feature(srnet, fnet, lr_fnet, net, lr_face):
-    feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, lr_face)
-    feature, _ = net(torch.cat([feature1, feature2], dim=1))
+def get_fusion_feature(srnet, fnet, lr_fnet, net, lr_face, down_f):
+    feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, lr_face, down_f)
+    feature = net(torch.cat([feature1, feature2], dim=1))
     return feature
 
 
@@ -443,7 +443,11 @@ def fusion_val(size, down_factor, lfw_bs, device, srnet, fnet, lr_fnet, net=None
             bs = len(targets)
             img1, img1_flip = img1.to(device), img1_flip.to(device)
             img2, img2_flip = img2.to(device), img2_flip.to(device)
-            #img1, img1_flip = tensor_norm(img1), tensor_norm(img1_flip)
+
+            down_f = torch.ones(size=(bs, 2, 1, 1)).to('cuda:0')
+            down_f[:][0] *= down_factor / 16.0
+            down_f[:][1] *= 1 / down_factor
+            # img1, img1_flip = tensor_norm(img1), tensor_norm(img1_flip)
             features11 = get_fusion_feature(srnet, fnet, lr_fnet, net, img1)
             features12 = get_fusion_feature(srnet, fnet, lr_fnet, net, img1_flip)
             features21 = get_fusion_feature(srnet, fnet, lr_fnet, net, img2)
