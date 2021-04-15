@@ -154,12 +154,9 @@ def eval():
     net.load_state_dict(checkpoint['net'])  # 加载模型可学习参数
     net.to(args.device)
     net.setVal(True)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=12)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=8)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=7)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=6)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=4)
-    acc = val.val_sphereface(-1, 96, 112, 32, args.device, fnet, net, index=1)
+    acc = val.val_sesface(-1, 96, 112, 4, args.device, fnet, net, index=16)
+    acc = val.val_sesface(-1, 96, 112, 4, args.device, fnet, net, index=8)
+    acc = val.val_sesface(-1, 96, 112, 4, args.device, fnet, net, index=4)
 
 
 args = train_args.get_args()

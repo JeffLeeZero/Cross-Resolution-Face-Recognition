@@ -10,7 +10,8 @@ import numpy as np
 from tqdm import tqdm
 from arguments import train_args
 from util import common
-from loaders import celeba_loader
+from loaders import celeba_loader, lfw_loader
+
 
 def initModels():
     ## Setup FNet
@@ -36,23 +37,22 @@ def initModels():
 if __name__ == '__main__':
     args = train_args.get_args()
     fnet, srnet, lr_fnet = initModels()
-    dataloader = celeba_loader.get_loader_downsample(args)
+    dataloader = lfw_loader.get_loader(-1, 8, 96, 112, args.bs)
 
     bar = tqdm(dataloader, total=len(dataloader), ncols=0)
     all_data = None
-    count = 0
     for batch_id, inputs in enumerate(bar):
+        img1, _, img1_flip, _, _ = inputs
         target = inputs['id'].to(args.device)
-        data = torch.reshape(target, [-1, 1])
-        hr_face = inputs['down1'].to(args.device)
-        data = torch.cat([data, fnet(hr_face)], dim=1)
-        for i in range(1, 4):
-            lr_face = inputs['down{}'.format(2 ** i)].to(args.device)
-            feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, lr_face)
-            data = torch.cat([data, feature1, feature2], dim=1)
-        count += 1
+        img1 = img1.to(args.device)
+        img1_flip = img1_flip.to(args.device)
+        down_f = torch.ones(size=(args.bs, 2, 1, 1)).to('cuda:0')
+        feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, img1, down_f)
+        data = torch.cat([feature1, feature2], dim=1)
+        feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, img1_flip, down_f)
+        data = torch.cat([data, feature1, feature2], dim=1)
         if all_data is None:
             all_data = data.cpu()
         else:
             all_data = torch.cat([all_data, data.cpu()], dim=0)
-    torch.save(all_data, "../../celeba_features.pth")
+    torch.save(all_data, "../../lfw_features.pth")

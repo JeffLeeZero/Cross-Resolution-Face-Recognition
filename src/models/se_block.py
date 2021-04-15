@@ -29,4 +29,6 @@ class SeBlock(nn.Module):
     def forward(self, inputs):
         x, down_factor = inputs
         res_output = self.resblock(x)
-        return x + res_output * self.seblock(torch.cat([self.pre(res_output), down_factor], dim=1)), down_factor
+        w = self.seblock(torch.cat([self.pre(res_output), down_factor], dim=1))
+        print(w)
+        return x + res_output * w, down_factor
