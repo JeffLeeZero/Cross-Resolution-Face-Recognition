@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
-from models import fusion_model1, sface, edsr
+from models import fusion_model1, sface, edsr_se
 
 import os
 import numpy as np
@@ -19,7 +19,7 @@ def initModels():
     fnet.load_state_dict(torch.load('../../pretrained/sface.pth'))
     fnet.to(args.device)
     common.freeze(fnet)
-    srnet = edsr.Edsr()
+    srnet = edsr_se.Edsr()
     srnet.load_state_dict(torch.load('/content/drive/MyDrive/app/edsrse_100_4_13/backup.pth')['net'])
     srnet.to(args.device)
     common.freeze(srnet)
@@ -43,7 +43,6 @@ if __name__ == '__main__':
     all_data = None
     for batch_id, inputs in enumerate(bar):
         img1, _, img1_flip, _, _ = inputs
-        target = inputs['id'].to(args.device)
         img1 = img1.to(args.device)
         img1_flip = img1_flip.to(args.device)
         down_f = torch.ones(size=(args.bs, 2, 1, 1)).to('cuda:0')

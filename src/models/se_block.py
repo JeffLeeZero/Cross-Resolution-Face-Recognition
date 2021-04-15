@@ -30,5 +30,4 @@ class SeBlock(nn.Module):
         x, down_factor = inputs
         res_output = self.resblock(x)
         w = self.seblock(torch.cat([self.pre(res_output), down_factor], dim=1))
-        print(w)
         return x + res_output * w, down_factor

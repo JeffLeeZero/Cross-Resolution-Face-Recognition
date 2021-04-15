@@ -498,6 +498,73 @@ def fusion_val(size, down_factor, lfw_bs, device, srnet, fnet, lr_fnet, net=None
     return mean_acc
 
 
+def fusion_val2(size, down_factor, lfw_bs, device, srnet, fnet, lr_fnet, net=None, step=None):
+    net.eval()
+    net.setVal(True)
+    assert down_factor >= 1, 'Downsampling factor should be >= 1.'
+    tensor_norm = tensor_sface_norm
+    dataloader = lfw_loader.get_loader(size, down_factor, 96, 112, lfw_bs)
+    features11_total, features12_total = [], []
+    features21_total, features22_total = [], []
+    labels = []
+    with torch.no_grad():
+        bs_total = 0
+        for index, (features11, img2, features12, img2_flip, targets) in enumerate(tqdm(dataloader, ncols=0)):
+            bs = len(targets)
+            features11, features12 = features11.to(device), features12.to(device)
+            img2, img2_flip = img2.to(device), img2_flip.to(device)
+
+            down_f = torch.ones(size=(bs, 2, 1, 1)).to('cuda:0')
+            down_f[:][0] *= down_factor / 16.0
+            down_f[:][1] *= 1 / down_factor
+            # img1, img1_flip = tensor_norm(img1), tensor_norm(img1_flip)
+            features21 = get_fusion_feature(srnet, fnet, lr_fnet, net, img2, down_f)
+            features22 = get_fusion_feature(srnet, fnet, lr_fnet, net, img2_flip, down_f)
+            features11_total += [features11]
+            features12_total += [features12]
+            features21_total += [features21]
+            features22_total += [features22]
+            labels += [targets]
+            bs_total += bs
+        features11_total = torch.cat(features11_total)
+        features12_total = torch.cat(features12_total)
+        features21_total = torch.cat(features21_total)
+        features22_total = torch.cat(features22_total)
+        labels = torch.cat(labels)
+        assert bs_total == 6000, print('LFW pairs should be 6,000')
+    labels = labels.cpu().numpy()
+    scores = tensor_pair_cosine_distance(features11_total, features12_total, features21_total, features22_total,
+                                         type='concat')
+    accuracy = []
+    thd = []
+    folds = KFold(n=6000, n_folds=10, shuffle=False)
+    thresholds = np.linspace(-10000, 10000, 10000 + 1)
+    thresholds = thresholds / 10000
+    predicts = np.hstack((scores, labels))
+    for idx, (train, test) in enumerate(folds):
+        best_thresh = find_best_threshold(thresholds, predicts[train])
+        accuracy.append(eval_acc(best_thresh, predicts[test]))
+        thd.append(best_thresh)
+    mean_acc, std = np.mean(accuracy), np.std(accuracy)
+    if step is not None:
+        message = 'LFWACC={:.4f} std={:.4f} at {}iter.'.format(mean_acc, std, step)
+    else:
+        message = 'LFWACC={:.4f} std={:.4f} at testing.'.format(mean_acc, std)
+    if size != -1:
+        message += '(down_factor: {}x{})'.format(size, size)
+    else:
+        message += '(down_factor:{} {}x{})'.format(down_factor, round(112 / down_factor),
+                                                   round(96 / down_factor))
+
+    print(message)
+    net.setVal(False)
+    # if step is not None:
+    #     log_name = os.path.join(args.checkpoints_dir, args.name, 'loss_log.txt')
+    #     with open(log_name, "a") as log_file:
+    #         log_file.write('\n' + message)
+    return mean_acc
+
+
 def simple_fusion(srnet, fnet, lr_fnet, face):
     feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, face)
     return torch.cat([feature1, feature2], dim=1)
