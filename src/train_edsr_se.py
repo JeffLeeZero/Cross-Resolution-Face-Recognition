@@ -154,6 +154,7 @@ def train():
             description += 'lr: {:.3e} '.format(lr)
             description += 'index: {:.0f} '.format(index)
             bar.set_description(desc=description)
+        print('16 loss:{:.4f} , 8 loss:{:.4f}, 4 loss:{:.4f}'.format(loss[4] / count[4], loss[3] / count[3], loss[2] / count[2]))
 
         acc = val.val_raw_se("sface", -1, 8, 96, 112, 32, args.device, fnet, srnet)
         if acc >= best_acc or epoch_id % 3 == 0:

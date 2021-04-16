@@ -371,10 +371,11 @@ def val_raw_se(fnet_type, size, down_factor, w, h, lfw_bs, device, fnet, srnet=N
             bs = len(targets)
             img1, img1_flip = img1.to(device), img1_flip.to(device)
             img2, img2_flip = img2.to(device), img2_flip.to(device)
-            down_factor = torch.ones(size=(bs, 1, 1, 1)).to('cuda:0')
-            down_factor *= index / 16
-            down_factor2 = 1 / down_factor / 16
-            down_f = torch.cat([down_factor, down_factor2], dim=1)
+            
+            down_f = torch.ones(size=(bs, 1, 1, 1)).to('cuda:0')
+            down_f *= index / 16
+            down_f2 = 1 / down_f / 16
+            down_f = torch.cat([down_f, down_f2], dim=1)
             img2, img2_flip = srnet(img2, down_f), srnet(img2_flip, down_f)
             img2 = tensors_cvBicubic_resize(h, w, device, img2)
             img2_flip = tensors_cvBicubic_resize(h, w, device, img2_flip)
