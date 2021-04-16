@@ -165,9 +165,10 @@ def val_sesface(size, w, h, lfw_bs, device, fnet, net, step=None, index=1):
 
             img1, img1_flip = tensor_norm(img1), tensor_norm(img1_flip)
             img2, img2_flip = tensor_norm(img2), tensor_norm(img2_flip)
-            down_factor = torch.ones(size=(bs, 2, 1, 1)).to('cuda:0')
-            down_factor[:][0] *= index / 8.0
-            down_factor[:][1] *= 1 / index
+            down_factor = torch.ones(size=(bs, 1, 1, 1)).to('cuda:0')
+            down_factor *= index / 16
+            down_factor2 = 1 / down_factor / 16
+            down_factor = torch.cat([down_factor, down_factor2], dim=1)
             fa = torch.ones(size=(bs, 2, 1, 1)).to('cuda:0')
             features11 = net(img1,fa)
             features12 = net(img1_flip,fa)
@@ -370,10 +371,10 @@ def val_raw_se(fnet_type, size, down_factor, w, h, lfw_bs, device, fnet, srnet=N
             bs = len(targets)
             img1, img1_flip = img1.to(device), img1_flip.to(device)
             img2, img2_flip = img2.to(device), img2_flip.to(device)
-
-            down_f = torch.ones(size=(bs, 2, 1, 1)).to('cuda:0')
-            down_f[:][0] *= down_factor / 16.0
-            down_f[:][1] *= 1 / down_factor
+            down_factor = torch.ones(size=(bs, 1, 1, 1)).to('cuda:0')
+            down_factor *= index / 16
+            down_factor2 = 1 / down_factor / 16
+            down_f = torch.cat([down_factor, down_factor2], dim=1)
             img2, img2_flip = srnet(img2, down_f), srnet(img2_flip, down_f)
             img2 = tensors_cvBicubic_resize(h, w, device, img2)
             img2_flip = tensors_cvBicubic_resize(h, w, device, img2_flip)
@@ -567,105 +568,9 @@ def fusion_val2(size, down_factor, lfw_bs, device, srnet, fnet, lr_fnet, net=Non
     return mean_acc
 
 
-def simple_fusion(srnet, fnet, lr_fnet, face):
-    feature1, feature2 = fusion_model.getFeatures(srnet, fnet, lr_fnet, face)
-    return torch.cat([feature1, feature2], dim=1)
 
-
-def val_simple_fusion(size, down_factor, lfw_bs, device, srnet, fnet, lr_fnet, step=None):
-    assert down_factor >= 1, 'Downsampling factor should be >= 1.'
-    tensor_norm = tensor_sface_norm
-    dataloader = lfw_loader.get_loader(size, down_factor, 96, 112, lfw_bs)
-    features11_total, features12_total = [], []
-    features21_total, features22_total = [], []
-    labels = []
-    with torch.no_grad():
-        bs_total = 0
-        for index, (img1, img2, img1_flip, img2_flip, targets) in enumerate(tqdm(dataloader, ncols=0)):
-            bs = len(targets)
-            img1, img1_flip = img1.to(device), img1_flip.to(device)
-            img2, img2_flip = img2.to(device), img2_flip.to(device)
-            img1, img1_flip = tensor_norm(img1), tensor_norm(img1_flip)
-            features11 = simple_fusion(srnet, fnet, lr_fnet, img1).detach()
-            features12 = simple_fusion(srnet, fnet, lr_fnet, img1_flip).detach()
-            features21 = simple_fusion(srnet, fnet, lr_fnet, img2).detach()
-            features22 = simple_fusion(srnet, fnet, lr_fnet, img2_flip).detach()
-            features11_total += [features11]
-            features12_total += [features12]
-            features21_total += [features21]
-            features22_total += [features22]
-            labels += [targets]
-            bs_total += bs
-        features11_total = torch.cat(features11_total)
-        features12_total = torch.cat(features12_total)
-        features21_total = torch.cat(features21_total)
-        features22_total = torch.cat(features22_total)
-        labels = torch.cat(labels)
-        assert bs_total == 6000, print('LFW pairs should be 6,000')
-    labels = labels.cpu().numpy()
-    scores = tensor_pair_cosine_distance(features11_total, features12_total, features21_total, features22_total,
-                                         type='concat')
-    accuracy = []
-    thd = []
-    folds = KFold(n=6000, n_folds=10, shuffle=False)
-    thresholds = np.linspace(-10000, 10000, 10000 + 1)
-    thresholds = thresholds / 10000
-    predicts = np.hstack((scores, labels))
-    for idx, (train, test) in enumerate(folds):
-        best_thresh = find_best_threshold(thresholds, predicts[train])
-        accuracy.append(eval_acc(best_thresh, predicts[test]))
-        thd.append(best_thresh)
-    mean_acc, std = np.mean(accuracy), np.std(accuracy)
-    if step is not None:
-        message = 'LFWACC={:.4f} std={:.4f} at {}iter.'.format(mean_acc, std, step)
-    else:
-        message = 'LFWACC={:.4f} std={:.4f} at testing.'.format(mean_acc, std)
-    if size != -1:
-        message += '(down_factor: {}x{})'.format(size, size)
-    else:
-        message += '(down_factor:{} {}x{})'.format(down_factor, round(112 / down_factor),
-                                                   round(96 / down_factor))
-
-    print(message)
-    net.setVal(False)
-    # if step is not None:
-    #     log_name = os.path.join(args.checkpoints_dir, args.name, 'loss_log.txt')
-    #     with open(log_name, "a") as log_file:
-    #         log_file.write('\n' + message)
-    return mean_acc
 
 
 if __name__ == '__main__':
     args = test_args.get_args()
-    print('----------------- Start -----------------')
-    ## FNet
-    fnet = sface.sface()
-    fnet.load_state_dict(torch.load(args.fnet_pth))
-    if args.fnet == 'sface':
-        args.w, args.h = 96, 112
-        args.feature_dim = 512
-    fnet.to(args.device)
-    if len(args.gpu_ids) > 1:
-        fnet = nn.DataParallel(fnet)
-    print('===> FNet: {} is used.'.format(args.fnet))
-    print('===> {} is loaded.'.format(args.fnet_pth))
-    ## SRNet
-    if args.isSR:
-        net = net_resolution.get_model()
-        if args.Continue:
-            checkpoint = torch.load(args.srnet_pth)
-            net.load_state_dict(checkpoint['net'])
-        else:
-            net.load_state_dict(torch.load(args.srnet_pth))
 
-        net.to(args.device)
-        if len(args.gpu_ids) > 1:
-            srnet = nn.DataParallel(net)
-        print('===> {} is loaded.'.format(args.srnet_pth))
-    else:
-        srnet = None
-        print('===> Bicubic interpolation is used.')
-    ## LR face verification
-    run(args.fnet, args.size, args.down_factor, args.w, args.h, args.lfw_bs, args.device, fnet, net)
-    print('------------------ End ------------------ ')
-    print('')

@@ -122,9 +122,10 @@ def train():
             else:
                 hr_face = inputs['down1'].to(args.device)
 
-            down_factor = torch.ones(size=(args.bs, 2, 1, 1)).to(args.device)
-            down_factor[:][0] *= (2 ** index) / 16.0
-            down_factor[:][1] *= 1 / (2 ** index)
+            down_factor = torch.ones(size=(args.bs, 1, 1, 1)).to('cuda:0')
+            down_factor *= (2**index) / 16
+            down_factor2 = 1 / down_factor / 16
+            down_factor = torch.cat([down_factor, down_factor2], dim=1)
             sr_face = srnet(lr_face, down_factor)
             lossd_pixel = criterion_pixel(sr_face, mr_face.detach())
             loss_pixel[index] += lossd_pixel.item()
