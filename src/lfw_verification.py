@@ -4,7 +4,7 @@ from models import sface
 
 import os
 import numpy as np
-from models import fusion_model1
+from models import fusion_model
 from arguments import test_args
 from tqdm import tqdm
 
@@ -424,7 +424,7 @@ def val_raw_se(fnet_type, size, down_factor, w, h, lfw_bs, device, fnet, srnet=N
 
 
 def get_fusion_feature(srnet, fnet, lr_fnet, net, lr_face, down_f):
-    feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, lr_face, down_f)
+    feature1, feature2 = fusion_model.getFeatures(srnet, fnet, lr_fnet, lr_face, down_f)
     feature = net(torch.cat([feature1, feature2], dim=1))
     return feature
 
@@ -503,7 +503,7 @@ def fusion_val2(size, down_factor, lfw_bs, device, srnet, fnet, lr_fnet, net=Non
     net.setVal(True)
     assert down_factor >= 1, 'Downsampling factor should be >= 1.'
     tensor_norm = tensor_sface_norm
-    dataloader = lfw_loader.get_loader(size, down_factor, 96, 112, lfw_bs)
+    dataloader = lfw_loader.get_loader_features(size, down_factor, 96, 112, lfw_bs)
     features11_total, features12_total = [], []
     features21_total, features22_total = [], []
     labels = []
@@ -518,6 +518,8 @@ def fusion_val2(size, down_factor, lfw_bs, device, srnet, fnet, lr_fnet, net=Non
             down_f[:][0] *= down_factor / 16.0
             down_f[:][1] *= 1 / down_factor
             # img1, img1_flip = tensor_norm(img1), tensor_norm(img1_flip)
+            features11 = net(features11)
+            features12 = net(features12)
             features21 = get_fusion_feature(srnet, fnet, lr_fnet, net, img2, down_f)
             features22 = get_fusion_feature(srnet, fnet, lr_fnet, net, img2_flip, down_f)
             features11_total += [features11]
@@ -566,7 +568,7 @@ def fusion_val2(size, down_factor, lfw_bs, device, srnet, fnet, lr_fnet, net=Non
 
 
 def simple_fusion(srnet, fnet, lr_fnet, face):
-    feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, face)
+    feature1, feature2 = fusion_model.getFeatures(srnet, fnet, lr_fnet, face)
     return torch.cat([feature1, feature2], dim=1)
 
 

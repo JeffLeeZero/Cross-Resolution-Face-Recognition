@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
-from models import fusion_model1, sface, edsr
+from models import fusion_model, sface, edsr
 
 import os
 import numpy as np
@@ -48,7 +48,7 @@ if __name__ == '__main__':
         data = torch.cat([data, fnet(hr_face)], dim=1)
         for i in range(1, 4):
             lr_face = inputs['down{}'.format(2 ** i)].to(args.device)
-            feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, lr_face)
+            feature1, feature2 = fusion_model.getFeatures(srnet, fnet, lr_fnet, lr_face)
             data = torch.cat([data, feature1, feature2], dim=1)
         count += 1
         if all_data is None:

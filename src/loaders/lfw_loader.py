@@ -9,6 +9,7 @@ from util.common import alignment, face_ToTensor
 LFW_ROOT = '../../Datasets/lfw/'
 LFW_LANDMARKS = '../data/LFW.csv'
 LFW_PAIRS = '../data/lfw_pairs.txt'
+LFW_FEATURES = '../../Datasets/lfw_features.pth'
 CELEBA_ROOT = '../../Datasets/CelebA/img_celeba/'
 CELEBA_CSV = '../data/celeba_clean_landmarks.csv'
 CELEBA_ID = '../data/identity_CelebA.txt'

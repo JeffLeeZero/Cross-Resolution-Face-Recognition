@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
-from models import fusion_model1, sface, edsr_se
+from models import fusion_model, sface, edsr_se
 
 import os
 import numpy as np
@@ -46,9 +46,9 @@ if __name__ == '__main__':
         img1 = img1.to(args.device)
         img1_flip = img1_flip.to(args.device)
         down_f = torch.ones(size=(args.bs, 2, 1, 1)).to('cuda:0')
-        feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, img1, down_f)
+        feature1, feature2 = fusion_model.getFeatures(srnet, fnet, lr_fnet, img1, down_f)
         data = torch.cat([feature1, feature2], dim=1)
-        feature1, feature2 = fusion_model1.getFeatures(srnet, fnet, lr_fnet, img1_flip, down_f)
+        feature1, feature2 = fusion_model.getFeatures(srnet, fnet, lr_fnet, img1_flip, down_f)
         data = torch.cat([data, feature1, feature2], dim=1)
         if all_data is None:
             all_data = data.cpu()
