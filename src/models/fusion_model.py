@@ -32,10 +32,13 @@ class FusionModel(nn.Module):
 
 
 def getFeatures(srnet, fnet, lr_fnet, lr_face, factor):
-    sr_face = srnet(lr_face.clone().detach(), factor.detach()).detach()
+    if srnet:
+        sr_face = srnet(lr_face.clone().detach(), factor.detach()).detach()
     # Feature loss
-    sr_face_up = nn.functional.interpolate(sr_face, size=(112, 96), mode='bilinear', align_corners=False)
-    feature1 = fnet(common.tensor2SFTensor(sr_face_up)).detach()
+        sr_face_up = nn.functional.interpolate(sr_face, size=(112, 96), mode='bilinear', align_corners=False)
+        feature1 = fnet(common.tensor2SFTensor(sr_face_up)).detach()
+    else:
+        feature1 = fnet(lr_face).detach()
     lr_face = nn.functional.interpolate(lr_face, size=(112, 96), mode='bilinear', align_corners=False)
     lr_face = common.tensor2SFTensor(lr_face)
     feature2 = lr_fnet(lr_face, factor.detach()).detach()

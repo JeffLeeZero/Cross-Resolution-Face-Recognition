@@ -107,7 +107,9 @@ def main():
         net.train()
         for batch_id, inputs in enumerate(bar):
             lr = optimizer.param_groups[0]['lr']
-            index = np.random.randint(1, 3 + 1)
+            index = np.random.randint(1, 4 + 1)
+            if index == 1:
+                index = 0
             lr_face = inputs['down{}'.format(2 ** index)].to(args.device)
             hr_face = inputs['down1'].to(args.device)
             target = inputs['id'].to(args.device)
